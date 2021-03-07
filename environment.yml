@@ -1,0 +1,14 @@
+name: fml
+dependencies:
+  - python=3.8
+  - scipy
+  - numpy
+  - matplotlib
+  - tensorflow
+  - flake8
+  - sphinx
+  - pip:
+    - scikit-learn
+    - pygame
+    - tqdm
+    - pylint
