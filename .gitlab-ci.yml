@@ -81,7 +81,7 @@ integration-test:
     - cp -a integration_tests/. bomberman_rl/integration_tests/
 
     # clean up just in case
-    - find . !\( -path './bomberman_rl*' -or -path './venv*'\) -delete
+    - find . ! \( -path './bomberman_rl*' -or -path './venv*'\) -delete
 
     - cd bomberman_rl
     - python -m  unittest discover -s integration_tests
