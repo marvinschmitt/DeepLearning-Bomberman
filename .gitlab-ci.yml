@@ -1,4 +1,5 @@
 stages:
+  - virtual-env
   - linting
   - testing
   - documentation
@@ -6,9 +7,20 @@ stages:
 
 image: conda/miniconda3
 
+cache:
+  key: venv-cache
+  paths:
+    - venv/
+
+virtual-env:
+  stage: virtual-env
+  script:
+    - conda env create --prefix ./venv -f environment.yml
+
 before_script:
-    - conda env create -f environment.yml
-    - conda activate fml
+    # Apparently envs in Gitlab runners have to be activated like this
+    # See https://stackoverflow.com/questions/57754356/activating-conda-environment-during-gitlab-ci
+    - source activate fml
 
 clean-code:
   stage: linting

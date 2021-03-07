@@ -1,6 +1,7 @@
 name: fml
 dependencies:
   - python=3.8
+  - pip
   - scipy
   - numpy
   - matplotlib
