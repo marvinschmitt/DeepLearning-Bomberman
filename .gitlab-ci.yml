@@ -19,7 +19,7 @@ before_script:
 
 virtual-env:
   stage: virtual-env
-  before_script:
+  before_script: []
   script:
     - conda env create --prefix ./venv -f environment.yml
 
