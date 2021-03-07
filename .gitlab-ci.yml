@@ -1,0 +1,74 @@
+stages:
+  - linting
+  - testing
+  - documentation
+  - evaluation
+
+image: conda/miniconda3
+
+before_script:
+    - conda env create -f environment.yml
+    - conda activate fml
+
+clean-code:
+  stage: testing
+  script:
+    - pylint agent_code/koetherminator
+    - flake8 agent_code/koetherminator
+    # Please add all directories you make changes to 
+
+# Ordinary unit-tests. Will be run within our game setup. 
+unit-test:
+  stage: testing
+  script:
+    - python -m  unittest discover -s tests
+
+# Test that validate timing and are hardware dependent.
+# Will be executed on AMD Ryzen™ 7 PRO 3700.
+speed-test:
+  stage: testing
+  tag:
+    - ryzen
+  script:
+    - python -m  unittest discover -s timed_tests
+
+# Tests that validate compatibility with tournament setup.
+# Will be exectuted in unaltered version of the game setup.
+integration-test:
+  stage: testing
+  script:
+    - git clone https://github.com/ukoethe/bomberman_rl.git
+    - cp -a agent_code/koetherminator/. bomberman_rl/agent_code/koetherminator/
+    - cp -a integration_tests/. bomberman_rl/integration_tests/
+
+    # clean up just in case
+    - find . ! -path 'bomberman_rl*' -delete
+
+    - cd bomberman_rl
+    - python -m  unittest discover -s integration_tests
+
+# Generates docs (Master branch only)
+# TODO
+.documentation:
+  stage: documentation
+  script:
+    - 
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+  artifacts:
+    paths:
+      - build/
+
+# Evaluates the performance of the agent (Master branch only)
+# Will be executed on AMD Ryzen™ 7 PRO 3700.
+evaluation:
+  stage: evaluation
+  tag:
+    - ryzen
+  script:
+    - python evaluate.py
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+  artifacts:
+    paths:
+      - results/  
