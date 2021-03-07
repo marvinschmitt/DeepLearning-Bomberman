@@ -15,7 +15,7 @@ cache:
 before_script:
     # Apparently envs in Gitlab runners have to be activated like this
     # See https://stackoverflow.com/questions/57754356/activating-conda-environment-during-gitlab-ci
-    - source activate ./venv/fml
+    - source activate ./venv
 
 # Set up venv on default runner
 virtual-env-default:
