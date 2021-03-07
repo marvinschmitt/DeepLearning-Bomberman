@@ -11,7 +11,7 @@ before_script:
     - conda activate fml
 
 clean-code:
-  stage: testing
+  stage: linting
   script:
     - pylint agent_code/koetherminator
     - flake8 agent_code/koetherminator
