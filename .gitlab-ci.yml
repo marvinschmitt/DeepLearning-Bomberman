@@ -22,7 +22,7 @@ virtual-env-default:
   stage: virtual-env
   before_script: []
   script:
-    - conda env create --prefix ./venv -f environment.yml
+    - conda env create --force --prefix ./venv -f environment.yml
   # Only (re-)create env when the definition has changed or
   # when no cached version is available.
   rules:
@@ -39,7 +39,7 @@ virtual-env-ryzen:
   tags:
     - ryzen
   script:
-    - conda env create --prefix ./venv -f environment.yml
+    - conda env create --force --prefix ./venv -f environment.yml
   # Only (re-)create env when the definition has changed or
   # when no cached version is available.
   rules:
