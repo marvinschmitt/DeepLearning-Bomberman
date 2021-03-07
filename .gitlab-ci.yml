@@ -15,13 +15,21 @@ cache:
 before_script:
     # Apparently envs in Gitlab runners have to be activated like this
     # See https://stackoverflow.com/questions/57754356/activating-conda-environment-during-gitlab-ci
-    - source activate fml
+    - source activate --prefix ./venv/fml
 
 virtual-env:
   stage: virtual-env
   before_script: []
   script:
     - conda env create --prefix ./venv -f environment.yml
+  # Only (re-)create env when the definition has changed or
+  # when no cached version is available.
+  rules:
+    - changes:
+      - environment.yml
+    - exists:
+      - venv/
+      when: never
 
 clean-code:
   stage: linting
