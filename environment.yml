@@ -7,7 +7,6 @@ dependencies:
   - numpy
   - matplotlib
   - tensorflow
-  - tf-agents
   - flake8
   - sphinx
   - pip:
@@ -15,3 +14,4 @@ dependencies:
     - pygame
     - tqdm
     - pylint
+    - tf-agents
