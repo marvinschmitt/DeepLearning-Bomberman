@@ -1,3 +1,12 @@
+import sys, os, inspect
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from environment import BombeRLeWorld
+from agent_code.user_agent.train import reward_from_events
+import settings as s
+
 from abc import ABC
 
 import numpy as np
@@ -10,9 +19,7 @@ from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
 
-from environment import BombeRLeWorld
-from agent_code.user_agent.train import reward_from_events
-import settings as s
+
 
 
 class BombermanGame:
@@ -192,3 +199,4 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
 if __name__ == "__main__":
     environment = BombermanEnvironment()
     utils.validate_py_environment(environment, episodes=5)
+    print("hi")

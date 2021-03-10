@@ -3,7 +3,7 @@ dependencies:
   - git
   - python=3.8
   - pip
-  - -scipy
+  - scipy
   - numpy
   - matplotlib
   - flake8

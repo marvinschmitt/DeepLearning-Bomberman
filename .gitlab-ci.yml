@@ -54,6 +54,8 @@ clean-code:
   script:
     - pylint agent_code/koetherminator
     - flake8 agent_code/koetherminator
+    - pylint dqn_learning
+    - flake8 dqn_learning
     # Please add all directories you make changes to 
 
 # Ordinary unit-tests. Will be run within our game setup. 
