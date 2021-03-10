@@ -21,7 +21,7 @@ from tf_agents.networks.actor_distribution_rnn_network import ActorDistributionR
 from tf_agents.networks.value_rnn_network import ValueRnnNetwork
 from tf_agents.networks.q_network import QNetwork
 
-from BombermanEnvironment import BombermanEnvironment
+from dqn_learning.BombermanEnvironment import BombermanEnvironment
 
 N_PARALLEL_ENVIRONMENTS = 4 # not yet (sadFace)
 INITIAL_COLLECT_STEPS = 100
@@ -32,7 +32,7 @@ def create_actor_value_networks(tf_env):
     actor_net = ActorDistributionRnnNetwork(
         tf_env.observation_spec(),
         tf_env.action_spec(),
-        conv_layer_params=[(4, 2, 2), (2, 2, 2)],
+        conv_layer_params=[(32, 8, 1), (16, 4, 1)],
         input_fc_layer_params=(256,),
         lstm_size=(256,),
         output_fc_layer_params=(128,)
@@ -40,7 +40,7 @@ def create_actor_value_networks(tf_env):
 
     value_net = ValueRnnNetwork(
         tf_env.observation_spec(),
-        conv_layer_params=[(4, 2, 2), (2, 2, 2)],
+        conv_layer_params=[(32, 8, 1), (16, 4, 1)],
         input_fc_layer_params=(256,),
         lstm_size=(256,),
         output_fc_layer_params=(128,),
@@ -50,8 +50,7 @@ def create_actor_value_networks(tf_env):
     return actor_net, value_net
 
 def create_q_network():
-    q_net
-
+    q_net = None
     return q_net
 
 
@@ -89,12 +88,16 @@ def collect_data(env, policy, buffer, steps):
 
 
 def train_step():
-    trajectories = replay_buffer.gather_all()
+    trajectories = replay_buffer.as_dataset(
+        sample_batch_size=tf_env.batch_size,
+        single_deterministic_pass=True
+    )
     return agent.train(experience=trajectories)
 
 
 def evaluate():
     pass
+
 
 if __name__ == '__main__':
     eval_tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
@@ -168,7 +171,7 @@ if __name__ == '__main__':
 
     saved_model = policy_saver.PolicySaver(eval_policy)
 
-    for ep in range(1000):
+    for ep in range(100):
         collect_driver.run()
         total_loss, _ = train_step()
         replay_buffer.clear()
