@@ -3,10 +3,9 @@ dependencies:
   - git
   - python=3.8
   - pip
-  - scipy
+  - -scipy
   - numpy
   - matplotlib
-  - tensorflow
   - flake8
   - sphinx
   - pip:
@@ -14,4 +13,5 @@ dependencies:
     - pygame
     - tqdm
     - pylint
+    - tensorflow
     - tf-agents
