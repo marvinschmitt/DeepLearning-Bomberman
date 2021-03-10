@@ -17,7 +17,7 @@ WIDTH = 1000
 HEIGHT = 600
 GRID_OFFSET = [(HEIGHT - ROWS * GRID_SIZE) // 2] * 2
 
-AGENT_COLORS = ['blue', 'green', 'yellow', 'pink']
+AGENT_COLORS = ['blue', 'green', 'yellow', 'pink'] * 100
 
 # Game rules
 BOMB_POWER = 3
