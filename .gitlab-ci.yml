@@ -33,7 +33,7 @@ virtual-env-default:
       when: never
 
 # Set up venv on ryzen runner
-virtual-env-ryzen:
+.virtual-env-ryzen:
   stage: virtual-env
   before_script: []
   tags:
