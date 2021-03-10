@@ -1,4 +1,6 @@
 name: fml
+channels:
+  - pip
 dependencies:
   - git
   - python=3.8
