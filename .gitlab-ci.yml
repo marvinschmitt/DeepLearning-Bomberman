@@ -7,24 +7,23 @@ stages:
 
 image: conda/miniconda3
 
-cache:
-  key: venv-cache
-  paths:
-    - venv/
-
 before_script:
     # Apparently envs in Gitlab runners have to be activated like this
     # See https://stackoverflow.com/questions/57754356/activating-conda-environment-during-gitlab-ci
     - source activate ./venv
 
 # Set up venv on default runner
-virtual-env-default:
+virtual-env-default-build:
   stage: virtual-env
   before_script: []
   script:
     - conda env create --force --prefix ./venv -f environment.yml
   # Only (re-)create env when the definition has changed or
   # when no cached version is available.
+  cache:
+    key: venv-cache-default
+    paths:
+      - venv/
   rules:
     - changes:
       - environment.yml
@@ -32,17 +31,46 @@ virtual-env-default:
     - exists:
       - venv/
       when: never
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
 
-# Set up venv on ryzen runner
-virtual-env-ryzen:
+# Extracts prebuild conda-env from cache and feeds into pipeline
+virtual-env-default-extract:
   stage: virtual-env
   before_script: []
+  script: []
+  cache:
+    key: venv-cache-default
+    paths:
+      - venv/
+  rules:
+    - changes:
+      - environment.yml
+      - .gitlab-ci.yml
+      when: never
+    - exists:
+      - venv/
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
+
+# Set up venv on Ryzen runner
+virtual-env-ryzen-build:
+  stage: virtual-env
   tags:
     - ryzen
+  before_script: []
   script:
     - conda env create --force --prefix ./venv -f environment.yml
   # Only (re-)create env when the definition has changed or
   # when no cached version is available.
+  cache:
+    key: venv-cache-ryzen
+    paths:
+      - venv/
   rules:
     - changes:
       - environment.yml
@@ -50,9 +78,39 @@ virtual-env-ryzen:
     - exists:
       - venv/
       when: never
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
+
+# Extracts prebuild conda-env from cache and feeds into pipeline
+virtual-env-ryzen-extract:
+  stage: virtual-env
+  tags:
+    - ryzen
+  before_script: []
+  script: []
+  cache:
+    key: venv-cache-ryzen
+    paths:
+      - venv/
+  rules:
+    - changes:
+      - environment.yml
+      - .gitlab-ci.yml
+      when: never
+    - exists:
+      - venv/
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
 
 clean-code:
   stage: linting
+  dependencies: 
+    - virtual-env-default-extract
+    - virtual-env-default-build
   script:
     - pylint agent_code/koetherminator
     - flake8 agent_code/koetherminator
@@ -61,6 +119,9 @@ clean-code:
 # Ordinary unit-tests. Will be run within our game setup. 
 unit-test:
   stage: testing
+  dependencies: 
+    - virtual-env-default-extract
+    - virtual-env-default-build
   script:
     - python -m  unittest discover -s tests
 
@@ -70,6 +131,9 @@ speed-test:
   stage: testing
   tags:
     - ryzen
+  dependencies: 
+    - virtual-env-ryzen-extract
+    - virtual-env-ryzen-build
   script:
     - python -m  unittest discover -s timed_tests
 
@@ -77,6 +141,9 @@ speed-test:
 # Will be exectuted in unaltered version of the game setup.
 integration-test:
   stage: testing
+  dependencies: 
+    - virtual-env-ryzen-extract
+    - virtual-env-ryzen-build
   script:
     - git clone https://github.com/ukoethe/bomberman_rl.git
     - cp -a agent_code/koetherminator/. bomberman_rl/agent_code/koetherminator/
@@ -92,6 +159,9 @@ integration-test:
 # TODO
 .documentation:
   stage: documentation
+  dependencies: 
+    - virtual-env-default-extract
+    - virtual-env-default-build
   script:
     - 
   rules:
@@ -106,6 +176,9 @@ evaluation:
   stage: evaluation
   tags:
     - ryzen
+  dependencies: 
+    - virtual-env-ryzen-extract
+    - virtual-env-ryzen-build
   script:
     - python evaluate.py
   rules:
