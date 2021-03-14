@@ -28,12 +28,13 @@ virtual-env-default:
   rules:
     - changes:
       - environment.yml
+      - .gitlab-ci.yml
     - exists:
       - venv/
       when: never
 
 # Set up venv on ryzen runner
-.virtual-env-ryzen:
+virtual-env-ryzen:
   stage: virtual-env
   before_script: []
   tags:
@@ -45,6 +46,7 @@ virtual-env-default:
   rules:
     - changes:
       - environment.yml
+      - .gitlab-ci.yml
     - exists:
       - venv/
       when: never
