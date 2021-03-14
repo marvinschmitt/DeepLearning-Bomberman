@@ -66,8 +66,8 @@ unit-test:
 # Will be executed on AMD Ryzen™ 7 PRO 3700.
 speed-test:
   stage: testing
-#  tags:
-#    - ryzen
+  tags:
+    - ryzen
   script:
     - python -m  unittest discover -s timed_tests
 
@@ -102,8 +102,8 @@ integration-test:
 # Will be executed on AMD Ryzen™ 7 PRO 3700.
 evaluation:
   stage: evaluation
-#  tags:
-#    - ryzen
+  tags:
+    - ryzen
   script:
     - python evaluate.py
   rules:
