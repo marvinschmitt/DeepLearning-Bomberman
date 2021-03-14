@@ -40,7 +40,6 @@ virtual-env-default-build:
 virtual-env-default-extract:
   stage: virtual-env
   before_script: []
-  script: []
   cache:
     key: venv-cache-default
     paths:
@@ -89,7 +88,6 @@ virtual-env-ryzen-extract:
   tags:
     - ryzen
   before_script: []
-  script: []
   cache:
     key: venv-cache-ryzen
     paths:
