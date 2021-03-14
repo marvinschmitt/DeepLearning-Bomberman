@@ -1,7 +1,7 @@
 stages:
   - virtual-env
-  - linting
   - testing
+  - linting
   - documentation
   - evaluation
 
