@@ -19,7 +19,7 @@ virtual-env-default-build:
   stage: virtual-env
   before_script: []
   script:
-    - if ! test -f "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
+    - if ! test -e "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
   cache:
     key: venv-cache-default
     paths:
@@ -65,7 +65,7 @@ virtual-env-ryzen-build:
     - ryzen
   before_script: []
   script:
-    - if ! test -f "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
+    - if ! test -e "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
   cache:
     key: venv-cache-default
     paths:
