@@ -104,35 +104,11 @@ virtual-env-ryzen-rebuild:
       - venv/
     expire_in: 1 hour
 
-# Extracts prebuild conda-env from cache and feeds into pipeline
-virtual-env-ryzen-extract:
-  stage: virtual-env
-  tags:
-    - ryzen
-  before_script: []
-  script:
-    - echo "Forwarding Conda Env"
-  cache:
-    key: venv-cache-ryzen
-    paths:
-      - venv/
-  rules:
-#    - changes:
-#      - environment.yml
-#      - .gitlab-ci.yml
-#      when: never
-    - exists:
-      - venv/
-      when: always
-  artifacts:
-    paths:
-      - venv/
-    expire_in: 1 hour
 
 clean-code:
   stage: linting
   dependencies: 
-    - virtual-env-default-extract
+    - virtual-env-default-rebuild
     - virtual-env-default-build
   script:
     - pylint agent_code/koetherminator
@@ -143,7 +119,7 @@ clean-code:
 unit-test:
   stage: testing
   dependencies: 
-    - virtual-env-default-extract
+    - virtual-env-default-rebuild
     - virtual-env-default-build
   script:
     - python -m  unittest discover -s tests
@@ -155,7 +131,7 @@ speed-test:
   tags:
     - ryzen
   dependencies: 
-    - virtual-env-ryzen-extract
+    - virtual-env-ryzen-rebuild
     - virtual-env-ryzen-build
   script:
     - python -m  unittest discover -s timed_tests
@@ -165,8 +141,8 @@ speed-test:
 integration-test:
   stage: testing
   dependencies: 
-    - virtual-env-ryzen-extract
-    - virtual-env-ryzen-build
+    - virtual-env-default-rebuild
+    - virtual-env-default-build
   script:
     - git clone https://github.com/ukoethe/bomberman_rl.git
     - cp -a agent_code/koetherminator/. bomberman_rl/agent_code/koetherminator/
@@ -183,7 +159,7 @@ integration-test:
 .documentation:
   stage: documentation
   dependencies: 
-    - virtual-env-default-extract
+    - virtual-env-default-rebuild
     - virtual-env-default-build
   script:
     - 
@@ -200,7 +176,7 @@ evaluation:
   tags:
     - ryzen
   dependencies: 
-    - virtual-env-ryzen-extract
+    - virtual-env-ryzen-rebuild
     - virtual-env-ryzen-build
   script:
     - python evaluate.py
