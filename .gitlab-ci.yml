@@ -51,8 +51,8 @@ virtual-env-default-extract:
 #      - environment.yml
 #      - .gitlab-ci.yml
 #      when: never
-#    - exists:
-#      - venv/
+    - exists:
+      - venv/
   artifacts:
     paths:
       - venv/
@@ -96,13 +96,13 @@ virtual-env-ryzen-extract:
     key: venv-cache-ryzen
     paths:
       - venv/
-#  rules:
+  rules:
 #    - changes:
 #      - environment.yml
 #      - .gitlab-ci.yml
 #      when: never
-#    - exists:
-#      - venv/
+    - exists:
+      - venv/
   artifacts:
     paths:
       - venv/
