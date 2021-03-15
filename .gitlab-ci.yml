@@ -13,13 +13,13 @@ before_script:
     - source activate ./venv
 
 # Set up venv on default runner
+# Only (re-)create env when the definition has changed or
+# when no cached version is available.
 virtual-env-default-build:
   stage: virtual-env
   before_script: []
   script:
-    - conda env create --force --prefix ./venv -f environment.yml
-  # Only (re-)create env when the definition has changed or
-  # when no cached version is available.
+    - if ! test -f "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
   cache:
     key: venv-cache-default
     paths:
@@ -28,58 +28,77 @@ virtual-env-default-build:
     - changes:
       - environment.yml
       - .gitlab-ci.yml
-    - exists:
-      - venv/
       when: never
+    - when: always
   artifacts:
     paths:
       - venv/
     expire_in: 1 hour
 
-# Extracts prebuild conda-env from cache and feeds into pipeline
-virtual-env-default-extract:
+# Set up venv on default runner
+# Only (re-)create env when the definition has changed or
+# when no cached version is available.
+virtual-env-default-rebuild:
   stage: virtual-env
   before_script: []
   script:
-    - echo "Forwarding Conda Env"
+    - conda env create --force --prefix ./venv -f environment.yml
   cache:
     key: venv-cache-default
     paths:
       - venv/
   rules:
-#    - changes:
-#      - environment.yml
-#      - .gitlab-ci.yml
-#      when: never
-    - exists:
-      - venv/
-      when: always
+    - changes:
+      - environment.yml
+      - .gitlab-ci.yml
   artifacts:
     paths:
       - venv/
     expire_in: 1 hour
 
-# Set up venv on Ryzen runner
+# Set up venv on default runner
+# Only (re-)create env when the definition has changed or
+# when no cached version is available.
 virtual-env-ryzen-build:
   stage: virtual-env
   tags:
     - ryzen
   before_script: []
   script:
-    - conda env create --force --prefix ./venv -f environment.yml
-  # Only (re-)create env when the definition has changed or
-  # when no cached version is available.
+    - if ! test -f "venv"; then conda env create --force --prefix ./venv -f environment.yml; fi
   cache:
-    key: venv-cache-ryzen
+    key: venv-cache-default
     paths:
       - venv/
   rules:
     - changes:
       - environment.yml
       - .gitlab-ci.yml
-    - exists:
-      - venv/
       when: never
+    - when: always
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
+
+# Set up venv on default runner
+# Only (re-)create env when the definition has changed or
+# when no cached version is available.
+virtual-env-ryzen-rebuild:
+  stage: virtual-env
+  tags:
+    - ryzen
+  before_script: []
+  script:
+    - conda env create --force --prefix ./venv -f environment.yml
+  cache:
+    key: venv-cache-default
+    paths:
+      - venv/
+  rules:
+    - changes:
+      - environment.yml
+      - .gitlab-ci.yml
   artifacts:
     paths:
       - venv/
