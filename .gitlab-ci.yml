@@ -47,10 +47,10 @@ virtual-env-default-extract:
     paths:
       - venv/
   rules:
-    - changes:
-      - environment.yml
-      - .gitlab-ci.yml
-      when: never
+#    - changes:
+#      - environment.yml
+#      - .gitlab-ci.yml
+#      when: never
 #    - exists:
 #      - venv/
   artifacts:
@@ -94,15 +94,15 @@ virtual-env-ryzen-extract:
     - echo "Forwarding Conda Env"
   cache:
     key: venv-cache-ryzen
-#    paths:
-#      - venv/
-  rules:
-    - changes:
-      - environment.yml
-      - .gitlab-ci.yml
-      when: never
-    - exists:
+    paths:
       - venv/
+#  rules:
+#    - changes:
+#      - environment.yml
+#      - .gitlab-ci.yml
+#      when: never
+#    - exists:
+#      - venv/
   artifacts:
     paths:
       - venv/
