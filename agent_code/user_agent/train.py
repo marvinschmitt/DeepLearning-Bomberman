@@ -50,7 +50,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.KILLED_OPPONENT: 5,
         # positive auxiliary rewards
         e.BOMB_DROPPED: 0.01,
-        e.COIN_FOUND: 0.1,
+        e.COIN_FOUND: 0.0,
         e.SURVIVED_ROUND: 0.5,
         e.CRATE_DESTROYED: 0.1,
         e.MOVED_LEFT: 0.001,
@@ -58,8 +58,8 @@ def reward_from_events(self, events: List[str]) -> float:
         e.MOVED_UP: 0.001,
         e.MOVED_DOWN: 0.001,
         # negative auxiliary rewards
-        e.INVALID_ACTION: -0.005,
-        e.WAITED: -0.005,
+        e.INVALID_ACTION: -0.0005,
+        e.WAITED: -0.0005,
         e.GOT_KILLED: -1,
         e.KILLED_SELF: -1
     }

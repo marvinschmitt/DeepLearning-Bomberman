@@ -17,6 +17,7 @@ from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.trajectories import trajectory
 from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
+from tf_agents.networks.q_network import QNetwork
 from tf_agents.networks.actor_distribution_rnn_network import ActorDistributionRnnNetwork
 from tf_agents.networks.value_rnn_network import ValueRnnNetwork
 from tf_agents.networks.q_network import QNetwork
@@ -24,76 +25,45 @@ from tf_agents.networks.q_network import QNetwork
 from adapter.bomberman_adapter import BombermanEnvironment
 
 N_PARALLEL_ENVIRONMENTS = 4 # not yet (sadFace)
-INITIAL_COLLECT_STEPS = 100
-COLLECT_EPISODES_PER_ITERATION = 100
+INITIAL_COLLECT_STEPS = 20000
 
 
-def create_actor_value_networks(tf_env):
-    actor_net = ActorDistributionRnnNetwork(
-        tf_env.observation_spec(),
-        tf_env.action_spec(),
-        conv_layer_params=[(32, 8, 1), (16, 4, 1)],
-        input_fc_layer_params=(256,),
-        lstm_size=(256,),
-        output_fc_layer_params=(128,)
-    )
+class ShowProgress:
+    def __init__(self, total):
+        self.counter = 0
+        self.total = total
 
-    value_net = ValueRnnNetwork(
-        tf_env.observation_spec(),
-        conv_layer_params=[(32, 8, 1), (16, 4, 1)],
-        input_fc_layer_params=(256,),
-        lstm_size=(256,),
-        output_fc_layer_params=(128,),
-        activation_fn=tf.nn.elu
-    )
-
-    return actor_net, value_net
-
-def create_q_network():
-    q_net = None
-    return q_net
+    def __call__(self, trajectory):
+        if not trajectory.is_boundary():
+            self.counter += 1
+        if self.counter % 100 == 0:
+            print("\r{}/{}".format(self.counter, self.total), end="")
 
 
-# from tf docu
-def compute_avg_return(environment, policy, num_episodes=10):
-    total_return = 0.0
-    for _ in range(num_episodes):
+def train_agent(n_iterations):
+    time_step = None
+    policy_state = agent.collect_policy.get_initial_state(tf_env.batch_size)
+    iterator = iter(dataset)
 
-        time_step = environment.reset()
-        episode_return = 0.0
+    for iteration in range(n_iterations):
+        current_metrics = []
 
-        while not time_step.is_last():
-            action_step = policy.action(time_step)
-            time_step = environment.step(action_step.action)
-            episode_return += time_step.reward
-        total_return += episode_return
+        time_step, policy_state = collect_driver.run(time_step, policy_state)
+        trajectories, buffer_info = next(iterator)
 
-    avg_return = total_return / num_episodes
-    return avg_return.numpy()[0]
+        train_loss = agent.train(trajectories)
+        all_train_loss.append(train_loss.loss.numpy())
 
+        for i in range(len(train_metrics)):
+            current_metrics.append(train_metrics[i].result().numpy())
 
-def collect_step(environment, policy, buffer):
-    time_step = environment.current_time_step()
-    action_step = policy.action(time_step)
-    next_time_step = environment.step(action_step.action)
-    traj = trajectory.from_transition(time_step, action_step, next_time_step)
+        all_metrics.append(current_metrics)
 
-    # Add trajectory to the replay buffer
-    buffer.add_batch(traj)
+        if iteration % 500 == 0:
+            print("\nIteration: {}, loss:{:.2f}".format(iteration, train_loss.loss.numpy()))
 
-
-def collect_data(env, policy, buffer, steps):
-    for _ in range(steps):
-        collect_step(env, policy, buffer)
-
-
-def train_step():
-    trajectories = replay_buffer.gather_all()
-    return agent.train(experience=trajectories)
-
-
-def evaluate():
-    pass
+            for i in range(len(train_metrics)):
+                print('{}: {}'.format(train_metrics[i].name, train_metrics[i].result().numpy()))
 
 
 if __name__ == '__main__':
@@ -104,74 +74,78 @@ if __name__ == '__main__':
     #    ))
 
     tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
+
+    q_net = QNetwork(
+        tf_env.observation_spec(),
+        tf_env.action_spec(),
+        conv_layer_params=[(32, 8, 1), (32, 4, 1)],
+        fc_layer_params=[32, 64, 128]
+    )
+
+    train_step = tf.Variable(0)
+    update_period = 4
     optimizer = tf.keras.optimizers.Adam()  # todo fine tune
 
-
-    """
-    q_network = QNetwork(
-        tf_env.observation_spec(),
-        tf_env.action_spec()# ,
-        # conv_layer_params=[(4, 4, 1)]
+    epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=1.0,
+        decay_steps=250000 // update_period,
+        end_learning_rate=0.01
     )
-    train_step_counter = tf.Variable(0)
+
     agent = dqn_agent.DqnAgent(
         tf_env.time_step_spec(),
         tf_env.action_spec(),
-        q_network=q_network,
+        q_network=q_net,
         optimizer=optimizer,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        train_step_counter=train_step_counter
+        gamma=0.99,
+        train_step_counter=train_step,
+        epsilon_greedy=lambda: epsilon_fn(train_step)
     )
-    """
-
-    actor_net, value_net = create_actor_value_networks(tf_env)
-
-    agent = ppo_agent.PPOAgent(
-        tf_env.time_step_spec(),
-        tf_env.action_spec(),
-        optimizer,
-        actor_net,
-        value_net,
-        num_epochs=25,
-        gradient_clipping=0.5,
-        entropy_regularization=1e-2,
-        importance_ratio_clipping=0.2,
-        use_gae=True,
-        use_td_lambda_return=True
-    )
-
 
     agent.initialize()
-
-    eval_policy = agent.policy
-    collect_policy = agent.collect_policy
-
 
     replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
         data_spec=agent.collect_data_spec,
         batch_size=tf_env.batch_size,
-        max_length=10000
+        max_length=1000000
     )
+    replay_buffer_observer = replay_buffer.add_batch
 
-    environment_steps_metric = tf_metrics.EnvironmentSteps()
-    step_metrics = [
-        tf_metrics.NumberOfEpisodes(),
-        environment_steps_metric,
+    train_metrics = [
+        tf_metrics.AverageReturnMetric(),
+        tf_metrics.AverageEpisodeLengthMetric()
     ]
 
-
-    collect_driver = dynamic_episode_driver.DynamicEpisodeDriver(
-        tf_env, collect_policy,
-        observers=[replay_buffer.add_batch],
-        num_episodes=COLLECT_EPISODES_PER_ITERATION
+    collect_driver = dynamic_step_driver.DynamicStepDriver(
+        tf_env,
+        agent.collect_policy,
+        observers=[replay_buffer_observer]+train_metrics,
+        num_steps=update_period
     )
 
-    saved_model = policy_saver.PolicySaver(eval_policy)
+    initial_collect_policy = random_tf_policy.RandomTFPolicy(tf_env.time_step_spec(), tf_env.action_spec())
 
-    for ep in range(50):
-        collect_driver.run()
-        total_loss, _ = train_step()
-        replay_buffer.clear()
-        print(f"Finished Ep {ep} with loss {total_loss:.6f}")
+    initial_driver = dynamic_step_driver.DynamicStepDriver(
+        tf_env,
+        initial_collect_policy,
+        observers=[replay_buffer.add_batch, ShowProgress(INITIAL_COLLECT_STEPS)],
+        num_steps=INITIAL_COLLECT_STEPS
+    )
+    final_time_step, final_policy_state = initial_driver.run()
 
-    saved_model.save("policy")
+    dataset = replay_buffer.as_dataset(sample_batch_size=64, num_steps=2, num_parallel_calls=3).prefetch(3)
+
+    all_train_loss = []
+    all_metrics = []
+
+    # training here
+    train_agent(50000)
+
+    policy_saver.PolicySaver(agent.policy).save("policy")
+
+
+
+
+    #saved_model = policy_saver.PolicySaver(eval_policy)
+    #saved_model.save("policy")
