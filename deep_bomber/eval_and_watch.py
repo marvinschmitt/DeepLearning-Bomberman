@@ -22,5 +22,5 @@ if __name__ == '__main__':
     replay_files = os.listdir("replays")
     replay_file = sorted(replay_files)[-1]
 
-    command = f"python main.py replay \"replays/{replay_file}\""
+    command = f"python main.py replay \"replays/{replay_file}\" --update-interval 0.03 --fps 60"
     os.system(command)
