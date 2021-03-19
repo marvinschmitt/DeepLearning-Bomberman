@@ -1,10 +1,8 @@
 import tensorflow as tf
 
-from tf_agents.environments import tf_py_environment, parallel_py_environment
-from tf_agents.agents.ppo import ppo_agent
-from tf_agents.policies import random_tf_policy, policy_saver
-from tf_agents.replay_buffers import tf_uniform_replay_buffer
-from tf_agents.utils import common
+
+def construct_timestep_from_gamestate(game_state: dict):
+    return None
 
 
 def setup(self):
@@ -15,6 +13,7 @@ def setup(self):
 
 
 def act(self, game_state: dict):
-    self.policy.action()
+    time_step = construct_timestep_from_gamestate(game_state)
+    action = self.policy.action(time_step)
 
     return action

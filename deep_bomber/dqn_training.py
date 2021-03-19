@@ -1,17 +1,14 @@
-import base64
-
-import matplotlib.pyplot as plt
-import numpy as np
-
 import tensorflow as tf
 import os
 import pickle
 
+from absl import app
+
+from tf_agents.system import system_multiprocessing as multiprocessing
 from tf_agents.agents.dqn import dqn_agent
-from tf_agents.drivers import dynamic_step_driver, dynamic_episode_driver
+from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment, parallel_py_environment
 from tf_agents.agents.ppo import ppo_agent
-from tf_agents.eval import metric_utils
 from tf_agents.metrics import tf_metrics
 from tf_agents.networks import sequential
 from tf_agents.policies import random_tf_policy, policy_saver
@@ -25,6 +22,7 @@ from tf_agents.networks.value_rnn_network import ValueRnnNetwork
 from tf_agents.networks.q_network import QNetwork
 
 from adapter.bomberman_adapter import BombermanEnvironment
+
 
 N_PARALLEL_ENVIRONMENTS = 4  # not yet (sadFace)
 INITIAL_COLLECT_STEPS = 1000
@@ -46,6 +44,7 @@ def compute_avg_return(environment, policy, num_episodes=10):
 
     avg_return = total_return / num_episodes
     return avg_return.numpy()[0]
+
 
 class ShowProgress:
     def __init__(self, total):
@@ -93,7 +92,7 @@ def train_agent(n_iterations, save_each=10000, print_each=500):
         if step % save_each == 0:
             print("Saving model")
             train_checkpointer.save(train_step)
-            policy_saver_helper.save("policy")
+            policy_saver.save("policy")
             with open("checkpoint/train_loss.pickle", "wb") as f:
                 pickle.dump(all_train_loss, f)
             with open("checkpoint/all_metrics.pickle", "wb") as f:
@@ -102,22 +101,21 @@ def train_agent(n_iterations, save_each=10000, print_each=500):
                 pickle.dump(returns, f)
 
 
-
-
 if __name__ == '__main__':
     eval_tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
-    # tf_env = tf_py_environment.TFPyEnvironment(
-    #    parallel_py_environment.ParallelPyEnvironment(
-    #        [BombermanEnvironment] * N_PARALLEL_ENVIRONMENTS
-    #    ))
+
+    #tf_env = tf_py_environment.TFPyEnvironment(
+    #   parallel_py_environment.ParallelPyEnvironment(
+    #       [BombermanEnvironment] * N_PARALLEL_ENVIRONMENTS
+    #   ))
 
     tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
 
     q_net = QNetwork(
         tf_env.observation_spec(),
         tf_env.action_spec(),
-        conv_layer_params=[(32, 8, 1), (32, 4, 1)],
-        fc_layer_params=[32, 64, 128]
+        conv_layer_params=[(32, 3, 1), (32, 3, 1)],
+        fc_layer_params=[128, 64, 32]
     )
 
     train_step = tf.Variable(0)
@@ -125,8 +123,8 @@ if __name__ == '__main__':
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)  # todo fine tune
 
     epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=1.0,
-        decay_steps=250000 // update_period,
+        initial_learning_rate=0.7,
+        decay_steps=25000 // update_period,
         end_learning_rate=0.01
     )
 
@@ -191,11 +189,11 @@ if __name__ == '__main__':
     )
     # train_checkpointer.initialize_or_restore()
     # train_step = tf.compat.v1.train.get_global_step()
-    policy_saver_helper = policy_saver.PolicySaver(agent.policy)
+    policy_save_handler = policy_saver.PolicySaver(agent.policy)
 
     # training here
-    train_agent(500000)
+    train_agent(100000)
 
     # save at end in every case
 
-    policy_saver_helper.save("policy")
+    policy_save_handler.save("policy")

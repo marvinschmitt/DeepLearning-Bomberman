@@ -1,7 +1,6 @@
 from abc import ABC
 
 import numpy as np
-import tensorflow as tf
 
 from collections import namedtuple
 
@@ -10,8 +9,10 @@ from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
 from environment import BombeRLeWorld
-from agent_code.user_agent.train import reward_from_events  # please move me to a better place!
+# from agent_code.user_agent.train import reward_from_events  # please move me to a better place!
 import settings as s
+import events as e
+from typing import List
 
 
 class BombermanGame:
@@ -66,8 +67,7 @@ class BombermanGame:
         
         events = self._agent.events
 
-        # todo: please move reward_from_events() out of agent_code.user_agent.train
-        reward = reward_from_events(self._agent, events)
+        reward = BombermanGame.reward_from_events(events)
 
         return np.array(reward, dtype=np.float32)
 
@@ -76,6 +76,40 @@ class BombermanGame:
 
     def get_observation(self):
         return BombermanGame.get_observation_from_state(self.get_world_state())
+
+    @staticmethod
+    def reward_from_events(events: List[str]) -> float:
+        """
+        *This is not a required function, but an idea to structure your code.*
+
+        Here you can modify the rewards your agent get so as to en/discourage
+        certain behavior.
+        """
+        game_rewards = {
+            e.COIN_COLLECTED: 1,
+            e.KILLED_OPPONENT: 5,
+            # positive auxiliary rewards
+            e.BOMB_DROPPED: 0.001,
+            e.COIN_FOUND: 0.01,
+            # e.SURVIVED_ROUND: 0.5,
+            e.CRATE_DESTROYED: 0.1,
+            e.MOVED_LEFT: 0.0001,
+            e.MOVED_RIGHT: 0.0001,
+            e.MOVED_UP: 0.0001,
+            e.MOVED_DOWN: 0.0001,
+            # negative auxiliary rewards
+            e.INVALID_ACTION: -0.0002,
+            e.WAITED: -0.0002,
+            e.GOT_KILLED: -1,
+            e.KILLED_SELF: -1
+        }
+
+        reward_sum = 0
+        for event in events:
+            if event in game_rewards:
+                reward_sum += game_rewards[event]
+        return reward_sum
+
 
     @staticmethod
     def get_observation_from_state(state):
@@ -191,4 +225,5 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
 
 if __name__ == "__main__":
     environment = BombermanEnvironment()
-    utils.validate_py_environment(environment, episodes=5)
+    utils.validate_py_environment(environment, episodes=10)
+    print("Everything is fine.")
