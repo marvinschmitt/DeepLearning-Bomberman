@@ -93,7 +93,7 @@ def train_agent(n_iterations, save_each=10000, print_each=500):
         if step % save_each == 0:
             print("Saving model")
             train_checkpointer.save(train_step)
-            policy_saver.save("policy")
+            policy_saver_helper.save("policy")
             with open("checkpoint/train_loss.pickle", "wb") as f:
                 pickle.dump(all_train_loss, f)
             with open("checkpoint/all_metrics.pickle", "wb") as f:
@@ -191,11 +191,11 @@ if __name__ == '__main__':
     )
     # train_checkpointer.initialize_or_restore()
     # train_step = tf.compat.v1.train.get_global_step()
-    policy_saver = policy_saver.PolicySaver(agent.policy)
+    policy_saver_helper = policy_saver.PolicySaver(agent.policy)
 
     # training here
-    train_agent(100000)
+    train_agent(500000)
 
     # save at end in every case
 
-    policy_saver.save("policy")
+    policy_saver_helper.save("policy")
