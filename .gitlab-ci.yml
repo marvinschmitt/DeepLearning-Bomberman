@@ -110,6 +110,9 @@ clean-code:
   dependencies: 
     - virtual-env-default-rebuild
     - virtual-env-default-build
+  rules:
+    - if: $CI_COMMIT_MESSAGE == *--no-lint*
+      when: never
   script:
     - pylint agent_code/koetherminator
     - flake8 agent_code/koetherminator
