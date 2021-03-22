@@ -123,21 +123,21 @@ class BombermanGame:
 
         """
         cols, rows = state['field'].shape[0], state['field'].shape[1]
-        observation = np.zeros([rows, cols], dtype=np.float32)
+        observation = np.zeros([rows, cols, 4], dtype=np.float32)
 
         # write field with crates
-        observation[:, :] = state['field']
+        observation[:, :, 0] = state['field']
 
         # write revealed coins
         if state['coins']:
             coins_x, coins_y = zip(*state['coins'])
-            observation[list(coins_y), list(coins_x)] = 2  # revealed coins
+            observation[list(coins_y), list(coins_x), 1] = 1  # revealed coins
 
         # write ticking bombs
         if state['bombs']:
             bombs_xy, bombs_t = zip(*state['bombs'])
             bombs_x, bombs_y = zip(*bombs_xy)
-            observation[list(bombs_y), list(bombs_x)] = -2  # list(bombs_t)
+            observation[list(bombs_y), list(bombs_x), 2] = list(bombs_t)
 
         """
         bombs_xy = [xy for (xy, t) in state['bombs']]
@@ -146,15 +146,15 @@ class BombermanGame:
         observation[2, bombs_x, bombs_y] = bombs_t or 0
         """
 
-        # write agents
+        # write agents (self: 1, others: -1)
         if state['self']:   # let's hope there is...
             _, _, _, (self_x, self_y) = state['self']
-            observation[self_y, self_x] = 3
+            observation[self_y, self_x, 3] = 1
 
         if state['others']:
             _, _, _, others_xy = zip(*state['others'])
             others_x, others_y = zip(*others_xy)
-            observation[others_y, others_x] = -3
+            observation[others_y, others_x, 3] = -1
 
         return observation
         # return tf.convert_to_tensor(observation, dtype=np.int32)
@@ -180,8 +180,8 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
         self._game = BombermanGame(make_video, replay)
 
         self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
-        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS),
-                                                             dtype=np.float32, minimum=-3, maximum=3, name='observation')
+        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
+                                                             dtype=np.float32, minimum=-1, maximum=4, name='observation')
 
     def action_spec(self):
         return self._action_spec

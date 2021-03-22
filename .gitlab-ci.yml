@@ -115,8 +115,8 @@ clean-code:
       when: never
     - when: always
   script:
-    - pylint agent_code/koetherminator
-    - flake8 agent_code/koetherminator
+    - pylint agent_code/koetherminator deep_bomber adapter
+    - flake8 agent_code/koetherminator deep_bomber adapter
     # Please add all directories you make changes to 
 
 # Ordinary unit-tests. Will be run within our game setup. 

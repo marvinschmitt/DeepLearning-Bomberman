@@ -1,24 +1,13 @@
 import tensorflow as tf
-import os
 import pickle
 
-from absl import app
-
-from tf_agents.system import system_multiprocessing as multiprocessing
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
-from tf_agents.environments import tf_py_environment, parallel_py_environment
-from tf_agents.agents.ppo import ppo_agent
+from tf_agents.environments import tf_py_environment
 from tf_agents.metrics import tf_metrics
-from tf_agents.networks import sequential
 from tf_agents.policies import random_tf_policy, policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
-from tf_agents.trajectories import trajectory
-from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
-from tf_agents.networks.q_network import QNetwork
-from tf_agents.networks.actor_distribution_rnn_network import ActorDistributionRnnNetwork
-from tf_agents.networks.value_rnn_network import ValueRnnNetwork
 from tf_agents.networks.q_network import QNetwork
 
 from adapter.bomberman_adapter import BombermanEnvironment
@@ -123,7 +112,7 @@ if __name__ == '__main__':
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)  # todo fine tune
 
     epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=0.7,
+        initial_learning_rate=0.9,
         decay_steps=25000 // update_period,
         end_learning_rate=0.01
     )
@@ -178,7 +167,7 @@ if __name__ == '__main__':
     all_metrics = []
     returns = []
 
-    checkpoint_dir = "checkpoint/"
+    checkpoint_dir = "checkpoint_1ch/"
     train_checkpointer = common.Checkpointer(
         ckpt_dir=checkpoint_dir,
         max_to_keep=1,
@@ -196,4 +185,4 @@ if __name__ == '__main__':
 
     # save at end in every case
 
-    policy_save_handler.save("policy")
+    policy_save_handler.save("policy_1ch")
