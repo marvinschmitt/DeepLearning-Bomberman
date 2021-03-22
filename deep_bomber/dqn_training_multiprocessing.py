@@ -1,190 +1,72 @@
-import tensorflow as tf
-import pickle
-
 from absl import app
+from absl import flags
+from absl import logging
+import os
+import tensorflow as tf
 
-from tf_agents.system import system_multiprocessing as multiprocessing
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment, parallel_py_environment
+
 from tf_agents.metrics import tf_metrics
-from tf_agents.policies import random_tf_policy, policy_saver
+from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.utils import common
 from tf_agents.networks.q_network import QNetwork
+from tf_agents.system.default.multiprocessing_core import handle_main
+from tf_agents.system.multiprocessing_test import XValStateSaver
 
 from adapter.bomberman_adapter import BombermanEnvironment
 
+# fixme: !nice
 
-def main(_):
-    N_PARALLEL_ENVIRONMENTS = 4  # not yet (sadFace)
-    INITIAL_COLLECT_STEPS = 1000
-    EVAL_INTERVAL = 1000
-    NUM_EVAL_EPISODES = 100
+flags.DEFINE_string('root_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'), 'Root directory for writing summaries and checkpoints')
+FLAGS = flags.FLAGS
 
-    def compute_avg_return(environment, policy, num_episodes=10):
-        total_return = 0.0
-        for _ in range(num_episodes):
-            time_step = environment.reset()
-            episode_return = 0.0
+INITIAL_COLLECT_STEPS = 1000
+EVAL_INTERVAL = 1000
+NUM_EVAL_EPISODES = 100
+BATCH_SIZE = 64
 
-            while not time_step.is_last():
-                action_step = policy.action(time_step)
-                time_step = environment.step(action_step.action)
-                episode_return += time_step.reward
-            total_return += episode_return
 
-        avg_return = total_return / num_episodes
-        return avg_return.numpy()[0]
+def train_eval_bomberman(
+        root_dir,
+        num_parallel_environments=4,
+        summary_interval=1000
+):
+    root_dir = os.path.expanduser(root_dir)
+    train_dir = os.path.join(root_dir, 'train')
+    eval_dir = os.path.join(root_dir, 'eval')
+    ckpt_dir = os.path.join(root_dir, 'checkpoint')
+    policy_dir = os.path.join(root_dir, 'policy')
 
-    class ShowProgress:
-        def __init__(self, total):
-            self.counter = 0
-            self.total = total
-
-        def __call__(self, trajectory):
-            if not trajectory.is_boundary():
-                self.counter += 1
-            if self.counter % 100 == 0:
-                print("\r{}/{}".format(self.counter, self.total), end="")
-
-    def train_agent(n_iterations, save_each=10000, print_each=500):
-        time_step = None
-        policy_state = agent.collect_policy.get_initial_state(tf_env.batch_size)
-        iterator = iter(dataset)
-
-        for iteration in range(n_iterations):
-            step = agent.train_step_counter.numpy()
-            current_metrics = []
-
-            time_step, policy_state = collect_driver.run(time_step, policy_state)
-            trajectories, buffer_info = next(iterator)
-
-            train_loss = agent.train(trajectories)
-            all_train_loss.append(train_loss.loss.numpy())
-
-            for i in range(len(train_metrics)):
-                current_metrics.append(train_metrics[i].result().numpy())
-
-            all_metrics.append(current_metrics)
-
-            if iteration % print_each == 0:
-                print("\nIteration: {}, loss:{:.2f}".format(iteration, train_loss.loss.numpy()))
-
-                for i in range(len(train_metrics)):
-                    print('{}: {}'.format(train_metrics[i].name, train_metrics[i].result().numpy()))
-
-            if step % EVAL_INTERVAL == 0:
-                avg_return = compute_avg_return(eval_tf_env, agent.policy, NUM_EVAL_EPISODES)
-                print(f'Step = {step}, Average Return = {avg_return}')
-                returns.append((step, avg_return))
-
-            if step % save_each == 0:
-                print("Saving model")
-                train_checkpointer.save(train_step)
-                policy_save_handler.save("policy")
-                with open("checkpoint/train_loss.pickle", "wb") as f:
-                    pickle.dump(all_train_loss, f)
-                with open("checkpoint/all_metrics.pickle", "wb") as f:
-                    pickle.dump(all_metrics, f)
-                with open("checkpoint/returns.pickle", "wb") as f:
-                    pickle.dump(returns, f)
-
-    eval_tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
-    tf_env = tf_py_environment.TFPyEnvironment(
-       parallel_py_environment.ParallelPyEnvironment(
-           [BombermanEnvironment] * N_PARALLEL_ENVIRONMENTS
-       ))
-
-    # tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment())
-
-    q_net = QNetwork(
-        tf_env.observation_spec(),
-        tf_env.action_spec(),
-        conv_layer_params=[(32, 8, 1), (32, 4, 1)],
-        fc_layer_params=[32, 64, 128]
-    )
-
-    train_step = tf.Variable(0)
-    update_period = 4
-    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)  # todo fine tune
-
-    epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=1.0,
-        decay_steps=250000 // update_period,
-        end_learning_rate=0.01
-    )
-
-    agent = dqn_agent.DqnAgent(
-        tf_env.time_step_spec(),
-        tf_env.action_spec(),
-        q_network=q_net,
-        optimizer=optimizer,
-        td_errors_loss_fn=common.element_wise_squared_loss,
-        gamma=0.99,
-        train_step_counter=train_step,
-        epsilon_greedy=lambda: epsilon_fn(train_step)
-    )
-
-    agent.initialize()
-
-    replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-        data_spec=agent.collect_data_spec,
-        batch_size=tf_env.batch_size,
-        max_length=10000
-    )
-    replay_buffer_observer = replay_buffer.add_batch
-
-    train_metrics = [
-        tf_metrics.AverageReturnMetric(batch_size=tf_env.batch_size),
-        tf_metrics.AverageEpisodeLengthMetric(batch_size=tf_env.batch_size)
+    train_summary_writer = tf.summary.create_file_writer(train_dir, flush_millis=1000)
+    train_summary_writer.set_as_default()
+    eval_summary_writer = tf.summary.create_file_writer(eval_dir)
+    eval_metrics = [
+        tf_metrics.AverageReturnMetric(buffer_size=10),
+        tf_metrics.AverageEpisodeLengthMetric(buffer_size=10)
     ]
 
-    collect_driver = dynamic_step_driver.DynamicStepDriver(
-        tf_env,
-        agent.collect_policy,
-        observers=[replay_buffer_observer]+train_metrics,
-        num_steps=update_period
-    )
+    global_step = tf.Variable(0)
 
-    initial_collect_policy = random_tf_policy.RandomTFPolicy(tf_env.time_step_spec(), tf_env.action_spec())
+    with tf.summary.record_if(lambda: tf.math.equal(global_step % summary_interval, 0)):
+        tf_env = tf_py_environment.TFPyEnvironment(parallel_py_environment.ParallelPyEnvironment(
+            [BombermanEnvironment] * num_parallel_environments
+        ))
+        eval_tf_env = BombermanEnvironment()
+        
+        optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
 
-    initial_driver = dynamic_step_driver.DynamicStepDriver(
-        tf_env,
-        initial_collect_policy,
-        observers=[replay_buffer.add_batch, ShowProgress(INITIAL_COLLECT_STEPS)],
-        num_steps=INITIAL_COLLECT_STEPS
-    )
-    _, _ = initial_driver.run()
 
-    dataset = replay_buffer.as_dataset(sample_batch_size=64, num_steps=2, num_parallel_calls=3).prefetch(3)
-
-    agent.train = common.function(agent.train)
-
-    all_train_loss = []
-    all_metrics = []
-    returns = []
-
-    checkpoint_dir = "checkpoint/"
-    train_checkpointer = common.Checkpointer(
-        ckpt_dir=checkpoint_dir,
-        max_to_keep=1,
-        agent=agent,
-        policy=agent.policy,
-        replay_buffer=replay_buffer,
-        global_step=train_step
-    )
-    # train_checkpointer.initialize_or_restore()
-    # train_step = tf.compat.v1.train.get_global_step()
-    policy_save_handler = policy_saver.PolicySaver(agent.policy)
-
-    # training here
-    train_agent(100000)
-
-    # save at end in every case
-
-    policy_save_handler.save("policy")
+def main(_):
+    if FLAGS.root_dir is None:
+        raise AttributeError("require root_dir!")
+    
+    train_eval_bomberman(root_dir=FLAGS.root_dir)
 
 
 if __name__ == '__main__':
-    multiprocessing.handle_main(main)
+    flags.mark_flag_as_required('root_dir')
+    handle_main(main, extra_state_savers=[])
+    # app.run(main)
