@@ -46,7 +46,6 @@ class BombermanGame:
         self._world = BombeRLeWorld(args, agents)
         self._agent = self._world.agents[0]
 
-
     def actions(self):
         """
         getter for available actions in the Bomberman Game

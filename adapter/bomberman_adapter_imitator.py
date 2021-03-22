@@ -76,9 +76,9 @@ class BombermanGame:
 
         self._world.do_step(agent_action)
         
-        # events = self._agent.events
+        events = self._agent.events
         # reward = BombermanGame.reward_from_events(events)
-        reward = BombermanGame.imitator_reward(action=agent_action, target_action=rb_agent_action)
+        reward = BombermanGame.imitator_reward(action=agent_action, target_action=rb_agent_action, events=events)
 
         return np.array(reward, dtype=np.float32)
 
@@ -89,23 +89,30 @@ class BombermanGame:
         return BombermanGame.get_observation_from_state(self.get_world_state())
 
     @staticmethod
-    def imitator_reward(action, target_action):
+    def imitator_reward(action, target_action, events=[]):
         """
         slight overkill at this point. may make more sophisticated
         """
 
+        imitator_event_rewards = {
+            e.KILLED_OPPONENT: 0,
+            e.COIN_COLLECTED: 0
+        }
+
         reward = float(action == target_action)
+        reward += BombermanGame.reward_from_events(events, imitator_event_rewards)
         return reward
 
     @staticmethod
-    def reward_from_events(events: List[str]) -> float:
+    def reward_from_events(events: List[str], event_reward_list=None) -> float:
         """
         *This is not a required function, but an idea to structure your code.*
 
         Here you can modify the rewards your agent get so as to en/discourage
         certain behavior.
+        event_reward_list is an optional custom reward list than can be passed
         """
-        game_rewards = {
+        game_rewards = event_reward_list or {
             e.COIN_COLLECTED: 1,
             e.KILLED_OPPONENT: 5,
             # positive auxiliary rewards
@@ -144,21 +151,21 @@ class BombermanGame:
 
         """
         cols, rows = state['field'].shape[0], state['field'].shape[1]
-        observation = np.zeros([rows, cols], dtype=np.float32)
+        observation = np.zeros([rows, cols, 1], dtype=np.float32)
 
         # write field with crates
-        observation[:, :] = state['field']
+        observation[:, :, 0] = state['field']
 
         # write revealed coins
         if state['coins']:
             coins_x, coins_y = zip(*state['coins'])
-            observation[list(coins_y), list(coins_x)] = 2  # revealed coins
+            observation[list(coins_y), list(coins_x), 0] = 2  # revealed coins
 
         # write ticking bombs
         if state['bombs']:
             bombs_xy, bombs_t = zip(*state['bombs'])
             bombs_x, bombs_y = zip(*bombs_xy)
-            observation[list(bombs_y), list(bombs_x)] = -2  # list(bombs_t)
+            observation[list(bombs_y), list(bombs_x), 0] = -2  # list(bombs_t)
 
         """
         bombs_xy = [xy for (xy, t) in state['bombs']]
@@ -170,12 +177,12 @@ class BombermanGame:
         # write agents
         if state['self']:   # let's hope there is...
             _, _, _, (self_x, self_y) = state['self']
-            observation[self_y, self_x] = 3
+            observation[self_y, self_x, 0] = 3
 
         if state['others']:
             _, _, _, others_xy = zip(*state['others'])
             others_x, others_y = zip(*others_xy)
-            observation[others_y, others_x] = -3
+            observation[others_y, others_x, 0] = -3
 
         return observation
         # return tf.convert_to_tensor(observation, dtype=np.int32)
@@ -201,7 +208,7 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
         self._game = BombermanGame(make_video, replay)
 
         self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
-        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS),
+        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
                                                              dtype=np.float32, minimum=-3, maximum=3, name='observation')
 
     def action_spec(self):
