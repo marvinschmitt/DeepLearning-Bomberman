@@ -169,7 +169,7 @@ if __name__ == '__main__':
     all_metrics = []
     returns = []
 
-    checkpoint_dir = "checkpoint_1ch/"
+    checkpoint_dir = "checkpoint/"
     train_checkpointer = common.Checkpointer(
         ckpt_dir=checkpoint_dir,
         max_to_keep=1,
@@ -187,4 +187,4 @@ if __name__ == '__main__':
 
     # save at end in every case
 
-    policy_save_handler.save("policy_imitator")
+    policy_save_handler.save("policy")
