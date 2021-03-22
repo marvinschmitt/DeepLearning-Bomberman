@@ -20,10 +20,11 @@ class BombermanGame:
         self.ROWS, self.COLS = s.ROWS, s.COLS
 
         args = namedtuple("args",
-                          ["no_gui", "fps", "turn_based", "update_interval", "save_replay", "replay", "make_video",
+                          ["no_gui", "fps", "turn_based", "update_interval", "save_replay", "replay", "make_video", "log_dir"
                            "continue_without_training"])
         args.continue_without_training = False
         args.save_replay = False
+        args.log_dir = "agent_code/koetherminator"
 
         if make_video:
             args.no_gui = False

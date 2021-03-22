@@ -20,10 +20,11 @@ class BombermanGame:
         self.ROWS, self.COLS = s.ROWS, s.COLS
 
         args = namedtuple("args",
-                          ["no_gui", "fps", "turn_based", "update_interval", "save_replay", "replay", "make_video",
+                          ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
                            "continue_without_training"])
         args.continue_without_training = False
         args.save_replay = False
+        args.log_dir = "agent_code/koetherminator"
 
         if make_video:
             args.no_gui = False
@@ -44,6 +45,7 @@ class BombermanGame:
 
         self._world = BombeRLeWorld(args, agents)
         self._agent = self._world.agents[0]
+
 
     def actions(self):
         """
@@ -123,21 +125,21 @@ class BombermanGame:
 
         """
         cols, rows = state['field'].shape[0], state['field'].shape[1]
-        observation = np.zeros([rows, cols], dtype=np.float32)
+        observation = np.zeros([rows, cols, 1], dtype=np.float32)
 
         # write field with crates
-        observation[:, :] = state['field']
+        observation[:, :, 0] = state['field']
 
         # write revealed coins
         if state['coins']:
             coins_x, coins_y = zip(*state['coins'])
-            observation[list(coins_y), list(coins_x)] = 2  # revealed coins
+            observation[list(coins_y), list(coins_x), 0] = 2  # revealed coins
 
         # write ticking bombs
         if state['bombs']:
             bombs_xy, bombs_t = zip(*state['bombs'])
             bombs_x, bombs_y = zip(*bombs_xy)
-            observation[list(bombs_y), list(bombs_x)] = -2  # list(bombs_t)
+            observation[list(bombs_y), list(bombs_x), 0] = -2  # list(bombs_t)
 
         """
         bombs_xy = [xy for (xy, t) in state['bombs']]
@@ -149,12 +151,12 @@ class BombermanGame:
         # write agents
         if state['self']:   # let's hope there is...
             _, _, _, (self_x, self_y) = state['self']
-            observation[self_y, self_x] = 3
+            observation[self_y, self_x, 0] = 3
 
         if state['others']:
             _, _, _, others_xy = zip(*state['others'])
             others_x, others_y = zip(*others_xy)
-            observation[others_y, others_x] = -3
+            observation[others_y, others_x, 0] = -3
 
         return observation
         # return tf.convert_to_tensor(observation, dtype=np.int32)
@@ -180,7 +182,7 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
         self._game = BombermanGame(make_video, replay)
 
         self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
-        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS),
+        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
                                                              dtype=np.float32, minimum=-3, maximum=3, name='observation')
 
     def action_spec(self):
