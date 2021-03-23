@@ -60,7 +60,7 @@ class BombermanGame:
         """
         return self._actions
 
-    def make_action(self, agent_action : str):
+    def make_action(self, agent_action: str):
         """
         Args:
             agent_action: action to be taken.

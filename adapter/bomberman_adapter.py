@@ -7,6 +7,7 @@ from collections import namedtuple
 from tf_agents.environments import py_environment, utils
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
+from agents import Agent, SequentialAgentBackend
 
 from environment import BombeRLeWorld
 import settings as s
@@ -19,8 +20,8 @@ class BombermanGame:
         self._actions = ACTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT', 'BOMB']
         self.ROWS, self.COLS = s.ROWS, s.COLS
 
-        args = namedtuple("args",
-                          ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
+        args = namedtuple("args", 5
+                          ["no_gui" , "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
                            "continue_without_training"])
         args.continue_without_training = False
         args.save_replay = False
@@ -46,6 +47,12 @@ class BombermanGame:
         self._world = BombeRLeWorld(args, agents)
         self._agent = self._world.agents[0]
 
+        rb_agent_cfg = {"color": "blue", "name": "rule_based_agent"}
+        rb_agent_backend = SequentialAgentBackend(False, rb_agent_cfg['name'], rb_agent_cfg['name'])
+        rb_agent_backend.start()
+        self._rb_agent = Agent(rb_agent_cfg['color'], rb_agent_cfg['name'], rb_agent_cfg['name'], train=False,
+                               backend=rb_agent_backend)
+
     def actions(self):
         """
         getter for available actions in the Bomberman Game
@@ -67,7 +74,7 @@ class BombermanGame:
         
         events = self._agent.events
 
-        reward = BombermanGame.reward_from_events(events)
+        reward = self.reward(events)
 
         return np.array(reward, dtype=np.float32)
 
@@ -75,10 +82,10 @@ class BombermanGame:
         return self._world.get_state_for_agent(self._agent)
 
     def get_observation(self):
-        return BombermanGame.get_observation_from_state(self.get_world_state())
+        return self.get_observation_from_state(self.get_world_state())
 
     @staticmethod
-    def reward_from_events(events: List[str]) -> float:
+    def reward(events: List[str]) -> float:
         """
         *This is not a required function, but an idea to structure your code.*
 
@@ -110,8 +117,8 @@ class BombermanGame:
                 reward_sum += game_rewards[event]
         return reward_sum
 
-    @staticmethod
-    def get_observation_from_state(state):
+    @classmethod
+    def get_observation_from_state(cls, state):
         """
         Build a tensor of the observed board state for the agent.
         Layers:
@@ -174,15 +181,131 @@ class BombermanGame:
         self._world.user_input = new_user_input
 
 
-class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which methods of ABC are actually required?
+class BombermanGameImitator(BombermanGame):
     def __init__(self, make_video=False, replay=False):
+        super().__init__(make_video, replay)
+
+    def make_action(self, agent_action: str):
+        game_state = self._world.get_state_for_agent(self._agent)
+        self._rb_agent.act(game_state)
+        rb_agent_action, _ = self._rb_agent.backend.get_with_time("act")
+
+        self._world.do_step(agent_action)
+
+        events = self._agent.events
+        reward = self.reward(action=agent_action, target_action=rb_agent_action, events=events)
+
+        return np.array(reward, dtype=np.float32)
+
+    @classmethod
+    def reward(cls, action, target_action, events=[]):
+        """
+        slight overkill at this point. may make more sophisticated
+        """
+
+        imitation_reward = 1.0
+        game_rewards = {
+            e.COIN_COLLECTED: 1,
+            e.KILLED_OPPONENT: 5,
+            # positive auxiliary rewards
+            e.BOMB_DROPPED: 0.001,
+            e.COIN_FOUND: 0.01,
+            # e.SURVIVED_ROUND: 0.5,
+            e.CRATE_DESTROYED: 0.1,
+            e.MOVED_LEFT: 0.0001,
+            e.MOVED_RIGHT: 0.0001,
+            e.MOVED_UP: 0.0001,
+            e.MOVED_DOWN: 0.0001,
+            # negative auxiliary rewards
+            e.INVALID_ACTION: -0.0002,
+            e.WAITED: -0.0002,
+            e.GOT_KILLED: -1,
+            e.KILLED_SELF: -1
+        }
+        game_rewards = {}
+
+        reward_sum = float(action == target_action) * imitation_reward
+        for event in events:
+            if event in game_rewards:
+                reward_sum += game_rewards[event]
+        return reward_sum
+
+
+class BombermanGameFourChannel(BombermanGame):
+    def __init__(self, make_video=False, replay=False):
+        super().__init__(make_video, replay)
+
+    @classmethod
+    def get_observation_from_state(cls, state):
+        """
+        Build a tensor of the observed board state for the agent.
+        Layers:
+        0: field with walls and crates
+        1: revealed coins
+        2: bombs
+        3: agents (self and others)
+
+        Returns: observation tensor
+
+        """
+        rows, cols = state['field'].shape[0], state['field'].shape[1]
+        observation = np.zeros([rows, cols, 4], dtype=np.float32)
+
+        # write field with crates
+        observation[:, :, 0] = state['field']
+
+        # write revealed coins
+        if state['coins']:
+            coins_x, coins_y = zip(*state['coins'])
+            observation[list(coins_y), list(coins_x), 1] = 1  # revealed coins
+
+        # write ticking bombs
+        if state['bombs']:
+            bombs_xy, bombs_t = zip(*state['bombs'])
+            bombs_x, bombs_y = zip(*bombs_xy)
+            observation[list(bombs_y), list(bombs_x), 2] = list(bombs_t)
+
+        """
+        bombs_xy = [xy for (xy, t) in state['bombs']]
+        bombs_t = [t for (xy, t) in state['bombs']]
+        bombs_x, bombs_y = [x for x, y in bombs_xy], [y for x, y in bombs_xy]
+        observation[2, bombs_x, bombs_y] = bombs_t or 0
+        """
+
+        # write agents (self: 1, others: -1)
+        if state['self']:  # let's hope there is...
+            _, _, _, (self_x, self_y) = state['self']
+            observation[self_y, self_x, 3] = 1
+
+        if state['others']:
+            _, _, _, others_xy = zip(*state['others'])
+            others_x, others_y = zip(*others_xy)
+            observation[others_y, others_x, 3] = -1
+
+        return observation
+        # return tf.convert_to_tensor(observation, dtype=np.int32)
+
+
+class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which methods of ABC are actually required?
+    def __init__(self, mode='base', make_video=False, replay=False):
         super().__init__()
-
-        self._game = BombermanGame(make_video, replay)
-
         self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
-        self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
+
+        if mode == 'base':
+            self._game = BombermanGame(make_video, replay)
+            self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
                                                              dtype=np.float32, minimum=-3, maximum=3, name='observation')
+        elif mode == 'imitator':
+            self._game = BombermanGameImitator(make_video, replay)
+            self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
+                                                             dtype=np.float32, minimum=-3, maximum=3, name='observation')
+        elif mode == 'fourchannel':
+            self._game = BombermanGameFourChannel(make_video, replay)
+            self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
+                                                                 dtype=np.float32, minimum=-1, maximum=4,
+                                                                 name='observation')
+        else:
+            raise ValueError("Please specify a valid mode!")
 
     def action_spec(self):
         return self._action_spec
@@ -224,5 +347,13 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
 
 if __name__ == "__main__":
     environment = BombermanEnvironment()
-    utils.validate_py_environment(environment, episodes=10)
-    print("Everything is fine.")
+    utils.validate_py_environment(environment, episodes=5)
+    print("Everything is fine with base env")
+
+    environment = BombermanEnvironment(mode='imitator')
+    utils.validate_py_environment(environment, episodes=5)
+    print("Everything is fine with imitator env.")
+
+    environment = BombermanEnvironment(mode='fourchannel')
+    utils.validate_py_environment(environment, episodes=5)
+    print("Everything is fine with fourchannel env.")

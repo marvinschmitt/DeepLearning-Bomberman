@@ -10,7 +10,7 @@ from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.utils import common
 from tf_agents.networks.q_network import QNetwork
 
-from adapter.bomberman_adapter_imitator import BombermanEnvironment
+from adapter.bomberman_adapter import BombermanEnvironment
 
 
 N_PARALLEL_ENVIRONMENTS = 4  # not yet (sadFace)
@@ -183,7 +183,11 @@ if __name__ == '__main__':
     policy_save_handler = policy_saver.PolicySaver(agent.policy)
 
     # training here
+<<<<<<< HEAD
     train_agent(100000)
+=======
+    train_agent(50000)
+>>>>>>> 4f170a4c13728a1403570e295c2a053672449b10
 
     # save at end in every case
 

@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     policy = tf.compat.v2.saved_model.load("policy")
     policy_state = policy.get_initial_state(batch_size=eval_tf_env.batch_size)
+    print(policy_state)
 
     while not time_step.is_last():
         policy_step = policy.action(time_step, policy_state)
