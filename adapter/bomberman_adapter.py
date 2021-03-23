@@ -98,7 +98,7 @@ class BombermanGame:
             self._world.gui.render_text(f"ACTION: {agent_action}", 800, 490, (255, 255, 255))
             self._world.gui.render_text(f"REWARD: {reward}", 800, 520, (50, 255, 50) if reward > 0 else (255, 50, 50))
             pygame.display.flip()
-            sleep(0.05)
+            sleep(0.03)
 
         return np.array(reward, dtype=np.float32)
 

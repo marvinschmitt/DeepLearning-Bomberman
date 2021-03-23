@@ -7,7 +7,7 @@ from adapter.bomberman_adapter import BombermanEnvironment, BombermanGame
 
 
 if __name__ == '__main__':
-    eval_tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment(mode='base', live_preview=True))
+    eval_tf_env = tf_py_environment.TFPyEnvironment(BombermanEnvironment(mode='no_bomb', live_preview=True))
 
     time_step = eval_tf_env.reset()
 

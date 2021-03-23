@@ -2,7 +2,7 @@ import tensorflow as tf
 import pickle
 
 from tf_agents.agents.ppo import ppo_agent
-from tf_agents.drivers import dynamic_step_driver
+from tf_agents.drivers import dynamic_step_driver, dynamic_episode_driver
 from tf_agents.environments import tf_py_environment
 from tf_agents.metrics import tf_metrics
 from tf_agents.policies import policy_saver
@@ -110,13 +110,8 @@ if __name__ == '__main__':
 
     train_step = tf.Variable(0)
     update_period = 4
-    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)  # todo fine tune
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)  # todo fine tune
 
-    epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=1.0,
-        decay_steps=250000 // update_period,
-        end_learning_rate=0.01
-    )
 
     agent = ppo_agent.PPOAgent(
         tf_env.time_step_spec(),
@@ -146,11 +141,11 @@ if __name__ == '__main__':
         tf_metrics.AverageEpisodeLengthMetric(batch_size=tf_env.batch_size)
     ]
 
-    collect_driver = dynamic_step_driver.DynamicStepDriver(
+    collect_driver = dynamic_episode_driver.DynamicEpisodeDriver(
         tf_env,
         agent.collect_policy,
         observers=[replay_buffer_observer]+train_metrics,
-        num_steps=update_period
+        num_episodes=10
     )
 
     # initial_collect_policy = random_tf_policy.RandomTFPolicy(tf_env.time_step_spec(), tf_env.action_spec())
