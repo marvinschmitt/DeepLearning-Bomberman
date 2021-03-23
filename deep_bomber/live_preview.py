@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     time_step = eval_tf_env.reset()
 
-    policy = tf.saved_model.load("policy_2")
+    policy = tf.saved_model.load("policies/policy_ppo")
     policy_state = policy.get_initial_state(batch_size=eval_tf_env.batch_size)
 
     while not time_step.is_last():

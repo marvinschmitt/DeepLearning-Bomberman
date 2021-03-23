@@ -338,6 +338,14 @@ class BombermanEnvironment(py_environment.PyEnvironment):
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
                                                                  dtype=np.float32, minimum=-1, maximum=4,
                                                                  name='observation')
+        elif mode == 'no_bomb':
+            self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
+            self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=4,
+                                                            name='action')
+            self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
+                                                                 dtype=np.float32, minimum=-1, maximum=4,
+                                                                 name='observation')
+
         else:
             raise ValueError("Please specify a valid mode!")
 
