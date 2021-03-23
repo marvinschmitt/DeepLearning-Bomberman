@@ -13,6 +13,7 @@ from environment import BombeRLeWorld
 import settings as s
 import events as e
 from typing import List
+from time import sleep
 
 from fallbacks import pygame
 
@@ -23,6 +24,7 @@ class BombermanGame:
     def __init__(self, make_video=False, replay=False, live_preview=False):
         self._actions = self.ACTIONS
         self.ROWS, self.COLS = s.ROWS, s.COLS
+        self._live_preview = False
 
         args = namedtuple("args",
                           ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
@@ -43,7 +45,7 @@ class BombermanGame:
             args.no_gui = False
             args.make_video = False
             args.fps = 15
-            args.update_interval = 0.1
+            args.update_interval = 1
             args.turn_based = False
 
         else:
@@ -93,9 +95,10 @@ class BombermanGame:
 
         if self._live_preview:
             self._world.render()
-            self._world.gui.render_text(f"ACTION: {agent_action}", 800, 390, (255, 255, 255))
-            self._world.gui.render_text(f"REWARD: {reward}", 800, 420, (50, 255, 50) if reward > 0 else (255, 50, 50))
+            self._world.gui.render_text(f"ACTION: {agent_action}", 800, 490, (255, 255, 255))
+            self._world.gui.render_text(f"REWARD: {reward}", 800, 520, (50, 255, 50) if reward > 0 else (255, 50, 50))
             pygame.display.flip()
+            sleep(0.05)
 
         return np.array(reward, dtype=np.float32)
 
@@ -377,10 +380,6 @@ class BombermanEnvironment(py_environment.PyEnvironment):
 
 
 if __name__ == "__main__":
-    environment = BombermanEnvironment(live_preview=True)
-    utils.validate_py_environment(environment, episodes=20)
-    print("Everything is fine with base env and video/gui")
-
     environment = BombermanEnvironment()
     utils.validate_py_environment(environment, episodes=5)
     print("Everything is fine with base env")
@@ -392,3 +391,7 @@ if __name__ == "__main__":
     environment = BombermanEnvironment(mode='fourchannel')
     utils.validate_py_environment(environment, episodes=5)
     print("Everything is fine with fourchannel env.")
+
+    environment = BombermanEnvironment(live_preview=True)
+    utils.validate_py_environment(environment, episodes=20)
+    print("Everything is fine with live preview")
