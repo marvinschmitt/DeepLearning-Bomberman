@@ -39,6 +39,7 @@ class ReplayBuffer():
         
         return states, actions, rewards, states_, terminal
 
+
 # change this later   
 def build_dqn(lr, n_actions, input_dims):
     inputs = tf.keras.Input(shape=input_dims)
@@ -73,7 +74,7 @@ class Agent():
         if np.random.random() < self.epsilon:
             action = np.random.choice(self.action_space)
         else:
-            actions = self.q_eval.predict(observation)
+            actions = self.q_eval.predict([observation])
             action = np.argmax(actions)
         
         return action
@@ -85,8 +86,8 @@ class Agent():
         
         states, actions, rewards, states_, dones = self.memory.sample_buffer(self.batch_size)
         
-        q_eval = self.q_eval.predict(states)
-        q_next = self.q_eval.predict(states_)
+        q_eval = self.q_eval.predict([states])
+        q_next = self.q_eval.predict([states_])
 
         q_target = np.copy(q_eval)
         batch_index = np.arange(self.batch_size, dtype=np.int32)
@@ -104,35 +105,34 @@ class Agent():
         self.q_eval = load_model(self.model_file)
 
 
-
 if __name__ == '__main__':
     env = BombermanEnvironment()
     lr = 0.001
     n_games = 500
-    n_actions = 6 #env.step expects an int between 0 and 5
     agent = Agent(gamma=0.99, epsilon=1.0, lr=lr,
-                  input_dims=env.observation_spec().shape,
-                 n_actions=n_actions, mem_size=100000, batch_size=64,
-                 epsilon_end=0.01)
+                  input_dims=env.observation_shape,
+                  n_actions=len(env.actions), mem_size=100000, batch_size=64,
+                  epsilon_end=0.01)
     scores = []
-    eps_history=[]
+    eps_history = []
 
     for i in range(n_games):
         done = False
         score = 0
         observation, reward = env.reset()
-        turn=0
+        turn = 0
+
         while not done:
             action = agent.choose_action(observation)
 
             observation_, reward = env.step(action)
-            done = env._game.is_episode_finished()
+            done = env.is_finished()
             score += reward
             agent.store_transition(observation, action, reward, observation_, done)
             
             observation = observation_
             agent.learn()
-            turn +=1
+            turn += 1
             
         eps_history.append(agent.epsilon)
         scores.append(score)
