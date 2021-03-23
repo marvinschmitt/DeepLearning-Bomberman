@@ -329,7 +329,8 @@ class BombermanEnvironment:
 
         elif mode == 'no_bomb':
             self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
-            self.actions = self.actions[:-1]
+            self.actions = self._game.actions()
+            self.actions[-1] = 'WAIT'
 
         else:
             raise ValueError("Please specify a valid mode!")
