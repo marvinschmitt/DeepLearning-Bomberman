@@ -107,7 +107,7 @@ class Agent():
 
 
 if __name__ == '__main__':
-    env = BombermanEnvironment(mode="nobomb")
+    env = BombermanEnvironment(mode="no_bomb")
     lr = 0.001
     n_games = 500
     agent = Agent(gamma=0.99, epsilon=1.0, lr=lr,

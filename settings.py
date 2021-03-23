@@ -3,8 +3,8 @@ import logging
 from fallbacks import pygame
 
 # Game properties
-COLS = 17
-ROWS = 17
+COLS = 9 # min 3
+ROWS = 9 # min 3
 CRATE_DENSITY = 0.10
 MAX_AGENTS = 2
 

@@ -312,7 +312,7 @@ class BombermanGameFourChannel(BombermanGame):
 class BombermanEnvironment:
     def __init__(self, mode='base', make_video=False, replay=False, live_preview=False):
         super().__init__()
-        self.observation_shape = (17, 17, 1)
+        self.observation_shape = (s.COLS, s.ROWS, 1)
 
         if mode == 'base':
             self._game = BombermanGame(make_video=make_video, replay=replay, live_preview=live_preview)
@@ -325,10 +325,10 @@ class BombermanEnvironment:
         elif mode == 'fourchannel':
             self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
             self.actions = self._game.actions()
-            self.observation_shape = (17, 17, 4)
+            self.observation_shape = (s.COLS, s.ROWS, 4)
 
         elif mode == 'no_bomb':
-            self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
+            self._game = BombermanGame(make_video=make_video, replay=replay, live_preview=live_preview)
             self.actions = self._game.actions()
             self.actions[-1] = 'WAIT'
 
