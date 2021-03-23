@@ -5,7 +5,7 @@ from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment
 from tf_agents.metrics import tf_metrics
-from tf_agents.policies import random_tf_policy, policy_saver
+from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.utils import common
 from tf_agents.networks.q_network import QNetwork
@@ -109,11 +109,11 @@ if __name__ == '__main__':
 
     train_step = tf.Variable(0)
     update_period = 4
-    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)  # todo fine tune
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)  # todo fine tune
 
     epsilon_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-        initial_learning_rate=0.9,
-        decay_steps=25000 // update_period,
+        initial_learning_rate=1.0,
+        decay_steps=250000 // update_period,
         end_learning_rate=0.01
     )
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         q_network=q_net,
         optimizer=optimizer,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        gamma=0.99,
+        gamma=0.95,
         train_step_counter=train_step,
         epsilon_greedy=lambda: epsilon_fn(train_step)
     )
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     replay_buffer_observer = replay_buffer.add_batch
 
     train_metrics = [
-        tf_metrics.AverageReturnMetric(batch_size=tf_env.batch_size),  # todo: doesn't work. just adds rewards
+        tf_metrics.AverageReturnMetric(batch_size=tf_env.batch_size),  # todo: doesn't work. just sums rewards
         tf_metrics.AverageEpisodeLengthMetric(batch_size=tf_env.batch_size)
     ]
 
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     all_metrics = []
     returns = []
 
-    checkpoint_dir = "checkpoint/"
+    checkpoint_dir = "checkpoints/checkpoint_50k"
     train_checkpointer = common.Checkpointer(
         ckpt_dir=checkpoint_dir,
         max_to_keep=1,
@@ -183,9 +183,9 @@ if __name__ == '__main__':
     policy_save_handler = policy_saver.PolicySaver(agent.policy)
 
     # training here
-    train_agent(20000)
+    train_agent(50000)
 
 
     # save at end in every case
 
-    policy_save_handler.save("policy")
+    policy_save_handler.save("policies/policy_50k")
