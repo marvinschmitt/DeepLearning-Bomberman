@@ -53,7 +53,7 @@ def train_agent(n_iterations, save_each=10000, print_each=500):
     policy_state = agent.collect_policy.get_initial_state(tf_env.batch_size)
     iterator = iter(dataset)
 
-    for iteration in range(n_iterations):
+    for iteration in range(1, n_iterations+1):
         step = agent.train_step_counter.numpy()
         current_metrics = []
 
@@ -183,11 +183,8 @@ if __name__ == '__main__':
     policy_save_handler = policy_saver.PolicySaver(agent.policy)
 
     # training here
-<<<<<<< HEAD
-    train_agent(100000)
-=======
-    train_agent(50000)
->>>>>>> 4f170a4c13728a1403570e295c2a053672449b10
+    train_agent(5000)
+
 
     # save at end in every case
 

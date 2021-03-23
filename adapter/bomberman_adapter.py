@@ -14,24 +14,34 @@ import settings as s
 import events as e
 from typing import List
 
+from fallbacks import pygame
+
 
 class BombermanGame:
     ACTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT', 'BOMB']
 
-    def __init__(self, make_video=False, replay=False):
+    def __init__(self, make_video=False, replay=False, live_preview=False):
         self._actions = self.ACTIONS
         self.ROWS, self.COLS = s.ROWS, s.COLS
 
         args = namedtuple("args",
-                          ["no_gui" , "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
+                          ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
                            "continue_without_training"])
         args.continue_without_training = False
         args.save_replay = False
         args.log_dir = "agent_code/koetherminator"
 
-        if make_video:
+        if make_video:  # not working yet!
             args.no_gui = False
-            args.make_video = True
+            args.make_video = True  # obviously gotta change to True if ffmpeg issue is fixed
+            args.fps = 15
+            args.update_interval = 0.1
+            args.turn_based = False
+
+        elif live_preview:
+            self._live_preview = True
+            args.no_gui = False
+            args.make_video = False
             args.fps = 15
             args.update_interval = 0.1
             args.turn_based = False
@@ -45,6 +55,9 @@ class BombermanGame:
 
         # agents = [("user_agent", True)] + [("rule_based_agent", False)] * (s.MAX_AGENTS-1)
         agents = [("user_agent", True)] + [("peaceful_agent", False)] * (s.MAX_AGENTS - 1)
+
+        if not args.no_gui:
+            pygame.init()
 
         self._world = BombeRLeWorld(args, agents)
         self._agent = self._world.agents[0]
@@ -62,7 +75,7 @@ class BombermanGame:
         """
         return self._actions
 
-    def make_action(self, agent_action : str):
+    def make_action(self, agent_action: str):
         """
 
         Args:
@@ -77,6 +90,12 @@ class BombermanGame:
         events = self._agent.events
 
         reward = self.reward(events)
+
+        if self._live_preview:
+            self._world.render()
+            self._world.gui.render_text(f"ACTION: {agent_action}", 800, 390, (255, 255, 255))
+            self._world.gui.render_text(f"REWARD: {reward}", 800, 420, (50, 255, 50) if reward > 0 else (255, 50, 50))
+            pygame.display.flip()
 
         return np.array(reward, dtype=np.float32)
 
@@ -167,14 +186,24 @@ class BombermanGame:
             observation[others_y, others_x, 0] = -3
 
         return observation
-        # return tf.convert_to_tensor(observation, dtype=np.int32)
 
     def new_episode(self):
         # todo: End the world/game properly
         # if self._world.time_to_stop():
         #    self._world.end_round()
 
-        self._world.new_round()
+        # self._world.new_round()
+        # if self._world.running:
+        #    self._world.end_round()
+        # self._world.end()
+
+        if self._world.running:
+            self._world.end_round()
+
+        if not self._world.running:
+            self._world.ready_for_restart_flag.wait()
+            self._world.ready_for_restart_flag.clear()
+            self._world.new_round()
 
     def is_episode_finished(self):
         return self._world.time_to_stop()
@@ -184,8 +213,8 @@ class BombermanGame:
 
 
 class BombermanGameImitator(BombermanGame):
-    def __init__(self, make_video=False, replay=False):
-        super().__init__(make_video, replay)
+    def __init__(self, make_video=False, replay=False, live_preview=False):
+        super().__init__(make_video, replay, live_preview=live_preview)
 
     def make_action(self, agent_action: str):
         game_state = self._world.get_state_for_agent(self._agent)
@@ -234,8 +263,8 @@ class BombermanGameImitator(BombermanGame):
 
 
 class BombermanGameFourChannel(BombermanGame):
-    def __init__(self, make_video=False, replay=False):
-        super().__init__(make_video, replay)
+    def __init__(self, make_video=False, replay=False, live_preview=False):
+        super().__init__(make_video, replay, live_preview=live_preview)
 
     @classmethod
     def get_observation_from_state(cls, state):
@@ -288,21 +317,21 @@ class BombermanGameFourChannel(BombermanGame):
         # return tf.convert_to_tensor(observation, dtype=np.int32)
 
 
-class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which methods of ABC are actually required?
-    def __init__(self, mode='base', make_video=False, replay=False):
+class BombermanEnvironment(py_environment.PyEnvironment):
+    def __init__(self, mode='base', make_video=False, replay=False, live_preview=False):
         super().__init__()
         self._action_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, maximum=5, name='action')
 
         if mode == 'base':
-            self._game = BombermanGame(make_video, replay)
+            self._game = BombermanGame(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
                                                              dtype=np.float32, minimum=-3, maximum=3, name='observation')
         elif mode == 'imitator':
-            self._game = BombermanGameImitator(make_video, replay)
+            self._game = BombermanGameImitator(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
                                                              dtype=np.float32, minimum=-3, maximum=3, name='observation')
         elif mode == 'fourchannel':
-            self._game = BombermanGameFourChannel(make_video, replay)
+            self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
                                                                  dtype=np.float32, minimum=-1, maximum=4,
                                                                  name='observation')
@@ -316,10 +345,9 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
         return self._observation_spec
 
     def _reset(self):
+        self._game.new_episode()
         self._game.set_user_input(None)
         observation = self._game.get_observation()
-
-        self._game.new_episode()
 
         return time_step.restart(observation)
 
@@ -335,7 +363,8 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
         if self._game.is_episode_finished():
             self.reset()
 
-        agent_action = self._game.actions()[action]
+        agent_action = self._game.actions()[int(action)]
+        assert agent_action in self._game.actions(), "Action not in action space!"
 
         reward = self._game.make_action(agent_action)
 
@@ -348,6 +377,10 @@ class BombermanEnvironment(py_environment.PyEnvironment, ABC):  # todo: which me
 
 
 if __name__ == "__main__":
+    environment = BombermanEnvironment(live_preview=True)
+    utils.validate_py_environment(environment, episodes=20)
+    print("Everything is fine with base env and video/gui")
+
     environment = BombermanEnvironment()
     utils.validate_py_environment(environment, episodes=5)
     print("Everything is fine with base env")
