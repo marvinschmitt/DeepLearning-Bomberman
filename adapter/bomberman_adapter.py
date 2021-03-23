@@ -16,11 +16,13 @@ from typing import List
 
 
 class BombermanGame:
+    ACTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT', 'BOMB']
+
     def __init__(self, make_video=False, replay=False):
-        self._actions = ACTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT', 'BOMB']
+        self._actions = self.ACTIONS
         self.ROWS, self.COLS = s.ROWS, s.COLS
 
-        args = namedtuple("args", 5
+        args = namedtuple("args",
                           ["no_gui" , "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
                            "continue_without_training"])
         args.continue_without_training = False
