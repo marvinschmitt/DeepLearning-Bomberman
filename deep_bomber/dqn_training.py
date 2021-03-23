@@ -183,7 +183,7 @@ if __name__ == '__main__':
     policy_save_handler = policy_saver.PolicySaver(agent.policy)
 
     # training here
-    train_agent(5000)
+    train_agent(20000)
 
 
     # save at end in every case
