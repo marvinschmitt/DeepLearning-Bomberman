@@ -6,10 +6,10 @@ from fallbacks import pygame
 COLS = 9 # min 3
 ROWS = 9 # min 3
 CRATE_DENSITY = 0.10
-MAX_AGENTS = 2
+MAX_AGENTS = 1
 
 # Round properties
-MAX_STEPS = 400
+MAX_STEPS = 100
 
 # GUI properties
 GRID_SIZE = 30

@@ -4,6 +4,7 @@ from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import load_model
 from adapter.bomberman_adapter import BombermanEnvironment
+import pickle
 
 
 class ReplayBuffer():
@@ -106,18 +107,21 @@ class Agent():
         self.q_net = load_model(self.model_file)
 
 
+SAVE_EACH_GAMES = 100
+
 if __name__ == '__main__':
     env = BombermanEnvironment(mode="no_bomb")
     lr = 0.001
     n_games = 500
     agent = Agent(gamma=0.99, epsilon=1.0, lr=lr,
                   input_dims=env.observation_shape,
+                  epsilon_dec=1e-6,
                   n_actions=len(env.actions), mem_size=100000, batch_size=64,
                   epsilon_end=0.01)
     scores = []
     eps_history = []
 
-    for i in range(n_games):
+    for i in range(1, n_games + 1):
         done = False
         score = 0
         observation, reward = env.reset()
@@ -138,4 +142,10 @@ if __name__ == '__main__':
         eps_history.append(agent.epsilon)
         scores.append(score)
         avg_score = np.mean(scores[-100:])
-        print(f'episode: {i}, score: {score}, avg_score: {avg_score}, epsilon: {agent.epsilon}, num_turns: {turn}')
+        print(f'game: {i}, score: {score:.4f}, avg_score: {avg_score:.4f}, epsilon: {agent.epsilon:.4f}, num_turns: {turn}')
+
+        if i % SAVE_EACH_GAMES == 0:
+            agent.save_model()
+            results = {'scores': scores, 'epsilons': eps_history}
+            with open("metrics.pt", "wb") as file:
+                pickle.dump(results, file)
