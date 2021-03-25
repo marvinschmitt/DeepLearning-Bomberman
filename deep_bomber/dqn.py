@@ -58,7 +58,7 @@ def build_dqn(lr, n_actions, input_dims):
 class Agent():
     def __init__(self, lr, gamma, n_actions, epsilon, batch_size,
                  input_dims, epsilon_dec=1e-3, epsilon_end=0.01,
-                 mem_size=1000000, fname='dqn_model.h5'):
+                 mem_size=1000000, fname='dqn_model_koetherminator.h5'):
         self.action_space = [i for i in range(n_actions)]
         self.gamma = gamma
         self.epsilon = epsilon
@@ -112,7 +112,7 @@ SAVE_EACH_GAMES = 100
 if __name__ == '__main__':
     env = BombermanEnvironment(mode="no_bomb")
     lr = 0.001
-    n_games = 500
+    n_games = 100
     agent = Agent(gamma=0.99, epsilon=1.0, lr=lr,
                   input_dims=env.observation_shape,
                   epsilon_dec=1e-6,
