@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import load_model
 from adapter.bomberman_adapter import BombermanEnvironment

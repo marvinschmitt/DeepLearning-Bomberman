@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from collections import namedtuple
@@ -110,10 +108,7 @@ class BombermanGame:
     @staticmethod
     def reward(events: List[str]) -> float:
         """
-        *This is not a required function, but an idea to structure your code.*
 
-        Here you can modify the rewards your agent get so as to en/discourage
-        certain behavior.
         """
         game_rewards = {
             e.COIN_COLLECTED: 1,
