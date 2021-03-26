@@ -25,8 +25,8 @@ class BombermanNode(Node):
 
     Implementation Hint: Maybe call 'perform_agent_action' from 'GenericWorld' directly?
     """
-    def __init__(self, world: BombeRLeWorld, actor_queue: queue.deque):
-        self.world = deepcopy(world)
+    def __init__(self, world: BombeRLeWorld, actor_queue: queue.deque, deep_copy=True):
+        self.world = deepcopy(world) if deep_copy else world
         self.actor_queue = actor_queue or queue.deque(np.random.permutation(len(self.world.active_agents)))
 
         # make sure that no dead agent will be polled. todo: test
@@ -52,10 +52,11 @@ class BombermanNode(Node):
         "Successor of this board state (for now just a randomly selected action)+ reward"
         if self.is_terminal():
             return
-        else:
-            valid_actions = [action for action in ACTIONS if self.is_action_valid(action)]
-            results = [self.make_move(self.actor, action) for action in valid_actions]
-            nodes = [(BombermanNode(world, self.actor_queue), reward) for world, reward in results]
+
+        valid_actions = [action for action in ACTIONS if self.is_action_valid(action)]
+        results = [self.make_move(self.actor, action) for action in valid_actions]
+        nodes = [(BombermanNode(world, self.actor_queue), reward) for world, reward in results]
+
         return tuple(nodes)
 
     def is_terminal(self) -> bool:
