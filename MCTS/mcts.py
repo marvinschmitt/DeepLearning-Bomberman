@@ -3,11 +3,14 @@ Adapted from
 Luke Harold Miles, July 2019, Public Domain Dedication
 https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
 """
+from __future__ import annotations
+
 import math
 import numpy as np
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Tuple
+
 
 
 class MCTS:
@@ -17,7 +20,7 @@ class MCTS:
         self.Q = defaultdict(lambda: np.array([0, 0, 0, 0]))  # total reward of each node (four players)
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
-        self.C = C # Exploration Hyperparameter in UTCs
+        self.C = C  # Exploration hyperparameter in UTCs
         self.final_selection_policy = final_selection_policy # policy used to select action
         self.path_selection_policy = path_selection_policy or self._uct_select
 
@@ -117,7 +120,7 @@ class Node(ABC):
         pass
 
     @abstractmethod
-    def find_children(self) -> set(Node):
+    def find_children(self) -> set[Node]:
         "All possible successors of this board state."
         pass
 
