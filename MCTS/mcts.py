@@ -32,9 +32,10 @@ class MCTS:
             return node.find_child_for_rollout()
 
         def score(n):
+            assert node.get_actor() == 0
             if self.N[n] == 0:
                 return float("-inf")  # avoid unseen moves
-            return self.Q[n][n.get_actor()] / self.N[n]  # average reward
+            return self.Q[n][node.get_actor()] / self.N[n]  # average reward
 
         selection_policy = self.final_selection_policy or score
 
@@ -89,7 +90,6 @@ class MCTS:
         assert all(n in self.children for n in self.children[node])
         # Mustn't be terminal
         assert not node.is_terminal()
-
         if node.get_actor() is None:
             i = 1
 

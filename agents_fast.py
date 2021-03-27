@@ -7,7 +7,7 @@ class Agent:
     A faster, non-threaded version of the Agent meant to work with mtcs.
     """
 
-    def __init__(self, train: bool = False):
+    def __init__(self, state = None, train: bool = False):
         """The game enters a terminal state when the last agent with  train = true dies."""
 
         self.train = train
@@ -22,20 +22,11 @@ class Agent:
         self.y = None
         self.bombs_left = None
 
-    def __init__(self, state, train: bool = False):
-        """The game enters a terminal state when the last agent with  train = true dies."""
-
-        self.train = train
-
-        self.name = state[0]
-
-        self.dead = None
-
-        self.events = []
-
-        self.x = state[3][0]
-        self.y = state[3][1]
-        self.bombs_left = state[2]
+        if state:
+            self.name = state[0]
+            self.x = state[3][0]
+            self.y = state[3][1]
+            self.bombs_left = state[2]
 
     def start_round(self):
         self.dead = False

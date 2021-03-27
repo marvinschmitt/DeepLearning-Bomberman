@@ -33,11 +33,13 @@ def act(self, game_state: dict):
 
     mcts = MCTS(C=self.C)
     initial_state = BombeRLeWorld(game_state, self.bomb_log, self.coin_log)
-    initial_order = queue.deque([0] + np.random.permutation(range(1, len(initial_state.agents))))
+    initial_order = queue.deque([0] + list(np.random.permutation(range(1, len(initial_state.agents)))))
     root = BombermanNode(initial_state, np.zeros(s.MAX_AGENTS), initial_order, "")
 
     start = time.perf_counter_ns()
     while time.perf_counter_ns() - start < self.time_to_think:
         mcts.do_rollout(root)
 
-    return mcts.choose(root).get_action()
+    action = mcts.choose(root).get_action()
+    print(action)
+    return action

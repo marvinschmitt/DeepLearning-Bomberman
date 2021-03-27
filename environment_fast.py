@@ -222,35 +222,38 @@ class GenericWorld:
         return False
 
 class BombeRLeWorld(GenericWorld):
-    def __init__(self, agents: List[Agent]):
+    def __init__(self, *args):
         super().__init__()
 
-        for agent in agents:
-            self.add_agent(agent)
+        if len(args) == 1:
+            agents = args[0]
 
-        self.new_round()
+            for agent in agents:
+                self.add_agent(agent)
 
-    def __init__(self, state, bomb_log, coin_log):
-        super().__init__()
+            self.new_round()
 
-        self.round = state["round"]
-        self.step = state["step"]
+        else:
+            state, bomb_log, coin_log = args
 
-        me = Agent(state["self"], train=True)
-        others = [Agent(other) for other in state["others"]]
+            self.round = state["round"]
+            self.step = state["step"]
 
-        for agent in [me] + others:
-            self.add_agent(agent)
-            self.active_agents.append(agent)
+            me = Agent(state["self"], train=True)
+            others = [Agent(other) for other in state["others"]]
 
-        self.arena = state["field"]
+            for agent in [me] + others:
+                self.add_agent(agent)
+                self.active_agents.append(agent)
 
-        self.explosions = []
+            self.arena = state["field"]
 
-        self.distribute_bombs(state, bomb_log)
-        self.distribute_coins(state, coin_log)
+            self.explosions = []
 
-        self.running = True
+            self.distribute_bombs(state, bomb_log)
+            self.distribute_coins(state, coin_log)
+
+            self.running = True
 
     def distribute_bombs(self, state, bomb_log):
         self.bombs = []

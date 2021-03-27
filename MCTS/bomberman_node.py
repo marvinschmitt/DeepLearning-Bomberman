@@ -29,7 +29,7 @@ class BombermanNode(Node):
             actor_queue = queue.deque(np.random.permutation(active_agent_indices))
         self.actor_queue = actor_queue
 
-        self.actor = self.actor_queue.pop() if self.actor_queue else None # (terminal state)
+        self.actor = self.actor_queue.popleft() if self.actor_queue else None # (terminal state)
         self.action = action
 
         self.reward = deepcopy(reward)
@@ -91,7 +91,7 @@ class BombermanNode(Node):
         return True
 
     def make_move(self, agent_idx, action, rollout=False):
-        world = self.world if self.rollout else deepcopy(self.world)
+        world = deepcopy(self.world) # self.world if self.rollout else
         a = world.agents[agent_idx]
         world.perform_agent_action(a, action)
         node = BombermanNode(world, self.reward, self.actor_queue, action, rollout)
