@@ -4,7 +4,6 @@ Luke Harold Miles, July 2019, Public Domain Dedication
 https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
 """
 from __future__ import annotations
-
 import math
 import numpy as np
 from abc import ABC, abstractmethod
@@ -17,7 +16,7 @@ class MCTS:
     "Monte Carlo tree Searcher. Multiplayer reward for 4 players."
 
     def __init__(self, C=1, path_selection_policy=None, final_selection_policy=None):
-        self.Q = defaultdict(lambda: np.array([0, 0, 0, 0]))  # total reward of each node (four players)
+        self.Q = defaultdict(lambda: np.array([0., 0., 0., 0.]))  # total reward of each node (four players)
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
         self.C = C  # Exploration hyperparameter in UTCs
@@ -72,12 +71,10 @@ class MCTS:
 
     def _simulate(self, node):
         "Returns the reward for a random simulation (to completion) of `node`"
-        reward = np.array([0, 0, 0, 0])
         while not node.is_terminal():
-            node, reward = node.find_child_for_rollout()
-            reward += reward
+            node = node.find_child_for_rollout()
 
-        return reward
+        return node.get_reward()
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"
@@ -90,12 +87,18 @@ class MCTS:
 
         # All children of node should already be expanded:
         assert all(n in self.children for n in self.children[node])
+        # Mustn't be terminal
+        assert not node.is_terminal()
+
+        if node.get_actor() is None:
+            i = 1
 
         log_N_vertex = math.log(self.N[node])
 
         def uct(n):
             "Upper confidence bound for trees"
-            return self.Q[n][n.get_actor()] / self.N[n] + self.C * math.sqrt(
+
+            return self.Q[n][node.get_actor()] / self.N[n] + self.C * math.sqrt(
                 log_N_vertex / self.N[n]
             )
 
@@ -116,6 +119,11 @@ class Node(ABC):
 
     @abstractmethod
     def get_action(self) -> str:
+        "Return what action was taken to get to this state."
+        pass
+
+    @abstractmethod
+    def get_reward(self) -> np.array:
         "Return what action was taken to get to this state."
         pass
 

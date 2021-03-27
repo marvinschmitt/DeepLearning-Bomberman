@@ -17,21 +17,52 @@ from agents_fast import Agent
 from fallbacks import pygame
 from items_fast import Coin, Explosion, Bomb
 
+ACTIONS = ["UP", "DOWN", "LEFT", "RIGHT", "WAIT", "BOMB"]
 
 class GenericWorld:
     def __init__(self):
 
         self.running: bool = False
-        self.step: int
+        self.step: int = 0
 
-        self.active_agents: List[Agent]
-        self.arena: np.ndarray
-        self.coins: List[Coin]
-        self.bombs: List[Bomb]
-        self.explosions: List[Explosion]
+        self.agents: List[Agent] = []
+        self.active_agents: List[Agent] = []
+        self.arena: np.ndarray = None
+        self.coins: List[Coin] = []
+        self.bombs: List[Bomb] = []
+        self.explosions: List[Explosion] = []
 
         self.round = 0
-        self.running = False
+
+    def __eq__(self, env2) -> bool:
+        if self.running != env2.running:
+            return False
+
+        if self.step != env2.step:
+            return False
+
+        if self.agents != env2.agents:
+            return False
+
+        if self.active_agents != env2.active_agents:
+            return False
+
+        if np.any(self.world.arena != env2.world.arena):
+            return False
+
+        if self.coins != env2.coins:
+            return False
+
+        if self.bombs != env2.bombs:
+            return False
+
+        if self.explosions != env2.explosions:
+            return False
+
+        if self.round != env2.round:
+            return False
+
+        return True
 
     def new_round(self):
         raise NotImplementedError()
@@ -47,6 +78,26 @@ class GenericWorld:
             for obstacle in self.bombs + self.active_agents:
                 is_free = is_free and (obstacle.x != x or obstacle.y != y)
         return is_free
+
+    def is_action_valid(self, agent: Agent, action: str):
+        if agent not in self.active_agents:
+            return False
+
+        # Perform the specified action if possible, wait otherwise
+        if action == 'UP' and self.tile_is_free(agent.x, agent.y - 1):
+            return True
+        elif action == 'DOWN' and self.tile_is_free(agent.x, agent.y + 1):
+            return True
+        elif action == 'LEFT' and self.tile_is_free(agent.x - 1, agent.y):
+            return True
+        elif action == 'RIGHT' and self.tile_is_free(agent.x + 1, agent.y):
+            return True
+        elif action == 'BOMB' and agent.bombs_left:
+            return True
+        elif action == 'WAIT':
+            return True
+
+        return False
 
     def perform_agent_action(self, agent: Agent, action: str):
         # Perform the specified action if possible, wait otherwise
@@ -87,7 +138,6 @@ class GenericWorld:
                 for a in self.active_agents:
                     if a.x == coin.x and a.y == coin.y:
                         coin.collectable = False
-                        a.update_score(s.REWARD_COIN)
                         a.add_event(e.COIN_COLLECTED)
 
     def update_bombs(self):
@@ -136,7 +186,6 @@ class GenericWorld:
                         if a is explosion.owner:
                             a.add_event(e.KILLED_SELF)
                         else:
-                            explosion.owner.update_score(s.REWARD_KILL)
                             explosion.owner.add_event(e.KILLED_OPPONENT)
             # Show smoke for a little longer
             if explosion.timer <= 0:
@@ -174,8 +223,59 @@ class GenericWorld:
 
 class BombeRLeWorld(GenericWorld):
     def __init__(self, agents: List[Agent]):
+        super().__init__()
+
         for agent in agents:
             self.add_agent(agent)
+
+        self.new_round()
+
+    def __init__(self, state, bomb_log, coin_log):
+        super().__init__()
+
+        self.round = state["round"]
+        self.step = state["step"]
+
+        me = Agent(state["self"], train=True)
+        others = [Agent(other) for other in state["others"]]
+
+        for agent in [me] + others:
+            self.add_agent(agent)
+            self.active_agents.append(agent)
+
+        self.arena = state["field"]
+
+        self.explosions = []
+
+        self.distribute_bombs(state, bomb_log)
+        self.distribute_coins(state, coin_log)
+
+        self.running = True
+
+    def distribute_bombs(self, state, bomb_log):
+        self.bombs = []
+        for bomb in state["bombs"]:
+            agent = self.agents[0] # defensive coding should bomb logging fail
+            for possiblle_agent in self.agents:
+                if possiblle_agent.name == bomb_log[bomb[0]]:
+                    agent = possiblle_agent
+
+            Bomb(bomb[0], agent, bomb[1], s.BOMB_POWER)
+
+    def distribute_coins(self, state, coin_log):
+        self.coins = [Coin(coin, True) for coin in state["coins"]]
+
+        x_split = np.array_split(np.arange(s.ROWS), 3)
+        y_split = np.array_split(np.arange(s.COLS), 3)
+
+        rng = np.random.default_rng()
+        for x_slice in x_split:
+            for y_slice in y_split:
+                n_coins = (coin_log[x_slice[:, np.newaxis], y_slice] == 1).sum()
+                if n_coins == 0: # No coin was revealed in this block
+                    crate = rng.choice(np.argwhere(self.arena[x_slice[:, np.newaxis], y_slice] == 1))
+                    crate += (x_slice[0], y_slice[0])
+                    self.coins.append(Coin(crate, False))
 
     def new_round(self):
         if self.running:
@@ -236,11 +336,12 @@ class BombeRLeWorld(GenericWorld):
 
     def end_round(self):
         assert self.running, "End of round requested while not running"
-        super().end_round()
 
         # Clean up survivors
         for a in self.active_agents:
             a.add_event(e.SURVIVED_ROUND)
+
+        self.active_agents = []
 
         # Mark round as ended
         self.running = False

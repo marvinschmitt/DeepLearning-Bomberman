@@ -37,6 +37,27 @@ class Bomb(Item):
 
         self.active = True
 
+    def __eq__(self, bomb2) -> bool:
+        if self.x != bomb2.x:
+            return False
+
+        if self.y != bomb2.y:
+            return False
+
+        if self.owner != bomb2.owner:
+            return False
+
+        if self.timer != bomb2.timer:
+            return False
+
+        if self.power != bomb2.power:
+            return False
+
+        if self.active != bomb2.active:
+            return False
+
+        return True
+
     def get_state(self):
         return (self.x, self.y), self.timer
 
@@ -72,3 +93,18 @@ class Explosion(Item):
         self.owner = owner
         self.timer = timer
         self.active = True
+
+    def __eq__(self, exp2) -> bool:
+        if self.blast_coords != exp2.blast_coords:
+            return False
+
+        if self.owner != exp2.owner:
+            return False
+
+        if self.timer != exp2.timer:
+            return False
+
+        if self.active != exp2.active:
+            return False
+
+        return True

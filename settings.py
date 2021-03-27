@@ -3,8 +3,8 @@ import logging
 from fallbacks import pygame
 
 # Game properties
-COLS = 17 # min 3
-ROWS = 17 # min 3
+COLS = 17  # min 3
+ROWS = 17  # min 3
 CRATE_DENSITY = 0.10
 MAX_AGENTS = 4
 
@@ -25,7 +25,7 @@ BOMB_TIMER = 4
 EXPLOSION_TIMER = 2
 
 # Rules for agents
-TIMEOUT = 0.5
+TIMEOUT = 120
 REWARD_KILL = 5
 REWARD_COIN = 1
 

@@ -10,22 +10,21 @@ def reward_from_events(events: List[str]) -> float:
     certain behavior.
     """
     game_rewards = {
-        e.COIN_COLLECTED: 1,
-        e.KILLED_OPPONENT: 5,
+        e.COIN_COLLECTED: 0,
+        e.KILLED_OPPONENT: 0,
         # positive auxiliary rewards
-        e.BOMB_DROPPED: 0.001,
-        # e.COIN_FOUND: 0.01,
-        # e.SURVIVED_ROUND: 0.5,
-        e.CRATE_DESTROYED: 0.1,
-        e.MOVED_LEFT: 0.001,
-        e.MOVED_RIGHT: 0.001,
-        e.MOVED_UP: 0.001,
-        e.MOVED_DOWN: 0.001,
-        # negative auxiliary rewards
-        e.INVALID_ACTION: -0.002,
-        e.WAITED: -0.002,
-        e.GOT_KILLED: -1,
-        e.KILLED_SELF: -1
+        e.BOMB_DROPPED: 0,
+        e.COIN_FOUND: 0,
+        e.SURVIVED_ROUND: 0,
+        e.CRATE_DESTROYED: 0,
+        e.MOVED_LEFT: 100,
+        e.MOVED_RIGHT: 100,
+        e.MOVED_UP: 100,
+        e.MOVED_DOWN: 100,
+        e.INVALID_ACTION: 0.000,
+        e.WAITED: 0.000,
+        e.GOT_KILLED: 0,
+        e.KILLED_SELF: 0
     }
 
     reward_sum = 0
