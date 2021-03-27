@@ -1,20 +1,18 @@
-import tensorflow as tf
-
-from tf_agents.environments import tf_py_environment, parallel_py_environment
-from tf_agents.agents.ppo import ppo_agent
-from tf_agents.policies import random_tf_policy, policy_saver
-from tf_agents.replay_buffers import tf_uniform_replay_buffer
-from tf_agents.utils import common
+from adapter.bomberman_adapter import BombermanGame, BombermanEnvironment
+from deep_bomber.dqn import Agent
 
 
 def setup(self):
-    self.policy = tf.compat.v2.saved_model.load('../../policy')
-    self.policy_state = self.policy.get_initial_state(batch_size=1)
-
-
+    self.agent = Agent(gamma=0.99, epsilon=1.0, lr=1e-3,
+                       input_dims=(17, 17, 1), epsilon_dec=1e-6,
+                       n_actions=6, mem_size=100000, batch_size=64,
+                       epsilon_end=0.01, fname='dqn_model_koetherminator.h5')
+    self.agent.load_model()
+    self.actions = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT', 'BOMB']
 
 
 def act(self, game_state: dict):
-    self.policy.action()
+    observation = BombermanGame.get_observation_from_state(game_state)
+    action = self.agent.choose_action(observation)
 
-    return action
+    return self.actions[action]
