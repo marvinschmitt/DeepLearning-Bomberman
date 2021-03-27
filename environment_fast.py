@@ -13,16 +13,13 @@ import numpy as np
 
 import events as e
 import settings as s
-from agents_fast import Agent, SequentialAgentBackend
+from agents_fast import Agent
 from fallbacks import pygame
 from items_fast import Coin, Explosion, Bomb
 
-WorldArgs = namedtuple("WorldArgs",
-                       ["fps", "turn_based", "update_interval", "save_replay", "replay", "make_video", "continue_without_training"])
-
 
 class GenericWorld:
-    def __init__(self, args: WorldArgs):
+    def __init__(self):
 
         self.running: bool = False
         self.step: int
@@ -33,14 +30,8 @@ class GenericWorld:
         self.bombs: List[Bomb]
         self.explosions: List[Explosion]
 
-        self.args = args
-
-        self.colors = s.AGENT_COLORS
-
         self.round = 0
         self.running = False
-        self.ready_for_restart_flag = Event()
-
 
     def new_round(self):
         raise NotImplementedError()
@@ -80,13 +71,8 @@ class GenericWorld:
         else:
             agent.add_event(e.INVALID_ACTION)
 
-    def poll_and_run_agents(self):
-        raise NotImplementedError()
-
     def do_step(self):
         self.step += 1
-
-        self.poll_and_run_agents()
 
         self.collect_coins()
         self.update_bombs()
@@ -187,9 +173,7 @@ class GenericWorld:
         return False
 
 class BombeRLeWorld(GenericWorld):
-    def __init__(self, args: WorldArgs, agents: List[Agent]):
-        super().__init__(args)
-
+    def __init__(self, agents: List[Agent]):
         for agent in agents:
             self.add_agent(agent)
 
@@ -250,107 +234,17 @@ class BombeRLeWorld(GenericWorld):
 
         self.running = True
 
-    def get_state_for_agent(self):
-        state = {
-            'round': self.round,
-            'step': self.step,
-            'field': np.array(self.arena),
-            'agents': [agent.get_state() for agent in self.active_agents],
-            'bombs': [bomb.get_state() for bomb in self.bombs],
-            'coins': [coin.get_state() for coin in self.coins if coin.collectable],
-        }
-
-        explosion_map = np.zeros(self.arena.shape)
-        for exp in self.explosions:
-            for (x, y) in exp.blast_coords:
-                explosion_map[x, y] = max(explosion_map[x, y], exp.timer)
-        state['explosion_map'] = explosion_map
-
-        return state
-
-    def send_training_events(self):
-        # Send events to all agents that expect them, then reset and wait for them
-        for a in self.agents:
-            if a.train:
-                if not a.dead:
-                    a.process_game_events(self.get_state_for_agent(a))
-                for enemy in self.active_agents:
-                    if enemy is not a:
-                        pass
-                        # a.process_enemy_game_events(self.get_state_for_agent(enemy), enemy)
-        for a in self.agents:
-            if a.train:
-                if not a.dead:
-                    a.wait_for_game_event_processing()
-                for enemy in self.active_agents:
-                    if enemy is not a:
-                        pass
-                        # a.wait_for_enemy_game_event_processing()
-        for a in self.active_agents:
-            a.store_game_state(self.get_state_for_agent(a))
-            a.reset_game_events()
-
-    def poll_and_run_agents(self):
-        self.send_training_events()
-
-        # Tell agents to act
-        for a in self.active_agents:
-            if a.available_think_time > 0:
-                a.act(self.get_state_for_agent(a))
-
-        # Give agents time to decide
-        perm = np.random.permutation(len(self.active_agents))
-        self.replay['permutations'].append(perm)
-        for i in perm:
-            a = self.active_agents[i]
-            if a.available_think_time > 0:
-                action, think_time = a.wait_for_act()
-                self.logger.info(f'Agent <{a.name}> chose action {action} in {think_time:.2f}s.')
-                if think_time > a.available_think_time:
-                    self.logger.warning(f'Agent <{a.name}> exceeded think time by {s.TIMEOUT - think_time}s. Setting action to "WAIT" and decreasing available time for next round.')
-                    action = "WAIT"
-                    a.available_think_time = s.TIMEOUT - (think_time - a.available_think_time)
-                else:
-                    self.logger.warning(f'Agent <{a.name}> stayed within acceptable think time.')
-                    a.available_think_time = s.TIMEOUT
-            else:
-                self.logger.info(f'Skipping agent <{a.name}> because of last slow think time.')
-                a.available_think_time += s.TIMEOUT
-                action = "WAIT"
-
-            self.replay['actions'][a.name].append(action)
-            self.perform_agent_action(a, action)
-
     def end_round(self):
         assert self.running, "End of round requested while not running"
         super().end_round()
 
-        self.logger.info(f'WRAPPING UP ROUND #{self.round}')
         # Clean up survivors
         for a in self.active_agents:
             a.add_event(e.SURVIVED_ROUND)
 
-        # Send final event to agents that expect them
-        for a in self.agents:
-            if a.train:
-                a.round_ended()
-
-        # Save course of the game for future replay
-        if self.args.save_replay:
-            self.replay['n_steps'] = self.step
-            with open(f'replays/{self.round_id}.pt', 'wb') as f:
-                pickle.dump(self.replay, f)
-
         # Mark round as ended
         self.running = False
-
-        self.logger.debug('Setting ready_for_restart_flag')
-        self.ready_for_restart_flag.set()
 
     def end(self):
         if self.running:
             self.end_round()
-        self.logger.info('SHUT DOWN')
-        for a in self.agents:
-            # Send exit message to shut down agent
-            self.logger.debug(f'Sending exit message to agent <{a.name}>')
