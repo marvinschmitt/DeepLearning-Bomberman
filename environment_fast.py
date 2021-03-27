@@ -17,7 +17,6 @@ from agents_fast import Agent
 from fallbacks import pygame
 from items_fast import Coin, Explosion, Bomb
 
-ACTIONS = ["UP", "DOWN", "LEFT", "RIGHT", "WAIT", "BOMB"]
 
 class GenericWorld:
     def __init__(self):

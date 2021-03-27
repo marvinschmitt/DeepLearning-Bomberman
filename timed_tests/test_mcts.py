@@ -12,7 +12,7 @@ class TestMCTS(unittest.TestCase):
     time_to_think = 6e9 # time in ns
 
     def test_mcts(self):
-        for _ in range(20):
+        for _ in range(10):
             mcts = MCTS(C=1)
             agents = [Agent(train=True), Agent(), Agent(), Agent()]
             initial_state = BombeRLeWorld(agents)

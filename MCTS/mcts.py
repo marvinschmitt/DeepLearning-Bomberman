@@ -5,6 +5,8 @@ https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
 """
 from __future__ import annotations
 import math
+import random
+
 import numpy as np
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -39,6 +41,8 @@ class MCTS:
 
         selection_policy = self.final_selection_policy or score
 
+        print(node.get_valid_actions())
+        print(node.get_actor())
         return max(self.children[node], key=selection_policy)
 
     def do_rollout(self, node):
@@ -59,7 +63,7 @@ class MCTS:
                 return path
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
-                n = unexplored.pop()
+                n = random.choice(list(unexplored))
                 path.append(n)
                 return path
             node = self.path_selection_policy(node)  # descend a layer deeper
