@@ -112,11 +112,7 @@ SAVE_EACH_GAMES = 100
 if __name__ == '__main__':
     env = BombermanEnvironment(mode="no_bomb")
     lr = 0.001
-<<<<<<< HEAD
     n_games = 50000
-=======
-    n_games = 100
->>>>>>> cd59c7926845cd495fb575e9e3fce905932c3d84
     agent = Agent(gamma=0.99, epsilon=1.0, lr=lr,
                   input_dims=env.observation_shape,
                   epsilon_dec=1e-6,
