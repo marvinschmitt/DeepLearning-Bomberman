@@ -3,17 +3,11 @@ import logging
 from fallbacks import pygame
 
 # Game properties
-<<<<<<< HEAD
 COLS = 9 # min 3
 ROWS = 9 # min 3
 CRATE_DENSITY = 0.00
 MAX_AGENTS = 1
-=======
-COLS = 17 # min 3
-ROWS = 17 # min 3
-CRATE_DENSITY = 0.10
-MAX_AGENTS = 4
->>>>>>> cd59c7926845cd495fb575e9e3fce905932c3d84
+
 
 # Round properties
 MAX_STEPS = 400
