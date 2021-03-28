@@ -262,7 +262,7 @@ class BombeRLeWorld(GenericWorld):
                 if possiblle_agent.name == bomb_log[bomb[0]]:
                     agent = possiblle_agent
 
-            Bomb(bomb[0], agent, bomb[1], s.BOMB_POWER)
+            self.bombs.append(Bomb(bomb[0], agent, bomb[1], s.BOMB_POWER))
 
     def distribute_coins(self, state, coin_log):
         self.coins = [Coin(coin, True) for coin in state["coins"]]

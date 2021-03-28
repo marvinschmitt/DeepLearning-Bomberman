@@ -8,8 +8,10 @@ from environment_fast import BombeRLeWorld
 from collections import defaultdict
 
 def setup(self):
-    self.time_to_think = 5500e6 # in ms
-    self.C = 5 # Exploration Hyperparameter
+    self.time_to_think = 10000e6 # in ms
+    self.C = 100 # Exploration Hyperparameter
+
+    self.first_turn = True
 
     self.bomb_log = defaultdict(None)
     self.coin_log = np.zeros((s.ROWS, s.COLS))
@@ -35,11 +37,17 @@ def act(self, game_state: dict):
     initial_state = BombeRLeWorld(game_state, self.bomb_log, self.coin_log)
     initial_order = queue.deque([0] + list(np.random.permutation(range(1, len(initial_state.agents)))))
     root = BombermanNode(initial_state, np.zeros(s.MAX_AGENTS), initial_order, "")
+    if self.first_turn:
+        root.suppress_bomb()
+        self.first_turn = False
 
     start = time.perf_counter_ns()
+    iterations = 0
     while time.perf_counter_ns() - start < self.time_to_think:
         mcts.do_rollout(root)
+        iterations += 1
 
+    print(iterations)
     action = mcts.choose(root).get_action()
     print(action)
     return action

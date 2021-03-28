@@ -13,7 +13,7 @@ from environment_fast import BombeRLeWorld
 
 MOVES = ["LEFT", "RIGHT", "UP", "DOWN"]
 WAIT = "WAIT"
-WAIT_CHANCE = 0.05
+WAIT_CHANCE = 1
 BOMB = "BOMB"
 BOMB_CHANCE = 0.9
 
@@ -37,7 +37,9 @@ class BombermanNode(Node):
         self.actor = self.actor_queue.popleft() if self.actor_queue else None # (terminal state)
         self.action = action
 
-        self.reward = reward
+        self.bomb_suppressed = False
+
+        self.reward = reward.copy()
         for a in range(len(self.world.agents)):
             reward[a] += self.world.agents[a].process_reward_delta()
 
@@ -99,9 +101,13 @@ class BombermanNode(Node):
         node = BombermanNode(world, self.reward, self.actor_queue, action, rollout)
         return node
 
+    def suppress_bomb(self):
+        self.bomb_suppressed = True
+
     def get_valid_actions(self):
         moves = [move for move in MOVES if self.is_action_valid(move)]
-        bomb = [BOMB] * self.is_action_valid(BOMB) * np.random.choice([0, 1], p=[1-BOMB_CHANCE, BOMB_CHANCE])
+        bomb = [BOMB] * self.is_action_valid(BOMB) * np.random.choice([0, 1], p=[1-BOMB_CHANCE, BOMB_CHANCE]) \
+            * (not self.bomb_suppressed)
         wait = [WAIT] * np.random.choice([0, 1], p=[1-WAIT_CHANCE, WAIT_CHANCE])
 
         return moves + bomb + wait or [WAIT]
