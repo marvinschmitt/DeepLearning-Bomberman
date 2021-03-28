@@ -3,6 +3,8 @@ import unittest
 import time
 import queue
 import numpy as np
+from tensorflow.python.keras.models import load_model
+
 from MCTS.mcts import MCTS
 from MCTS.bomberman_node import BombermanNode
 from agents_fast import Agent
@@ -54,3 +56,13 @@ class TestMCTS(unittest.TestCase):
         plt.savefig("mcts_rollouts_by_t.png")
         # add line at 500ms if executed on RYZEN
         # add number of rollouts in DQN and value
+
+    def test_forwardpass_time(self):
+        agents = [Agent(train=True), Agent(), Agent(), Agent()]
+        initial_state = BombeRLeWorld(agents)
+
+        q_net = load_model("../pre_training/best-network.hdf5")
+        observation = initial_state.get_observation()
+        start = time.perf_counter_ns()
+        q_net(observation[np.newaxis, :])
+        print(time.perf_counter_ns() - start)

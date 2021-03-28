@@ -10,7 +10,6 @@ from MCTS.bomberman_node import BombermanNode
 from agents_fast import Agent
 from environment_fast import BombeRLeWorld, ACTION_TO_ID
 
-
 def main(args, return_data=False, print_state_step=False):
     start_generation = time.perf_counter_ns()
 

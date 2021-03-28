@@ -39,10 +39,10 @@ def main(
 
     mc = ModelCheckpoint('pre_training/latest-network.hdf5',
                          verbose=1, save_best_only=False,
-                         save_weights_only=True, mode='auto', save_freq='epoch')
+                         save_weights_only=False, mode='auto', save_freq='epoch')
     mcb = ModelCheckpoint('pre_training/best-network.hdf5',
                           monitor='val_loss', verbose=1, save_best_only=True,
-                          save_weights_only=True, mode='auto', save_freq='epoch')
+                          save_weights_only=False, mode='auto', save_freq='epoch')
 
     # Schedule of DenseNet/ResNext
     def schedule(epoch, current_lr):

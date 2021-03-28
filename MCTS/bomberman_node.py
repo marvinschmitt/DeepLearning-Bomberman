@@ -48,11 +48,11 @@ class BombermanNode(Node):
         return self.actor
 
     def get_action(self) -> str:
-        "Return what action was taken. (index in 0,..,5)"
+        "Return what action was taken to get to this state."
         return self.action
 
     def get_reward(self) -> np.array:
-        "Return what action was taken to get to this state."
+        "Return cumulated rewards up to this node."
         return self.reward
 
     def find_children(self) -> Set[Node]:

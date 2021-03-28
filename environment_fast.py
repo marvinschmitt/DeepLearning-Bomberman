@@ -365,7 +365,7 @@ class BombeRLeWorld(GenericWorld):
         if self.running:
             self.end_round()
 
-    def get_observation(self):
+    def get_observation(self, agent_id=0):
         rows, cols = self.arena.shape
         observation = np.zeros([rows, cols, 1], dtype=np.float32)
 
@@ -385,11 +385,11 @@ class BombeRLeWorld(GenericWorld):
 
         # write agents
         if self.agents:
-            if self.agents[0]:
+            if self.agents[agent_id]:
                 observation[self.agents[0].x, self.agents[0].y, 0] = 3
 
-            if self.agents[1:]:
-                xy = np.array([[a.x, a.y] for a in self.agents[1:]]).T
+            if self.agents[:agent_id] + self.agents[agent_id+1:]:
+                xy = np.array([[a.x, a.y] for a in self.agents[:agent_id] + self.agents[agent_id+1:]]).T
                 observation[xy[0], xy[1], 0] = -3
 
         return observation
