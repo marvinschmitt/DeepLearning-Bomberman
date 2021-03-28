@@ -4,17 +4,16 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, CSVLogger, TensorBoard
-from adapter.bomberman_adapter import BombermanEnvironment
 from deep_bomber.agent_network import network
     
 if __name__ == '__main__':
     # Values
-    NAME = f'Kötherminator-{int(time.time())}'
+    NAME = f'Koetherminator-{int(time.time())}'
     BATCH_SIZE = 128
     INITIAL_EPOCH = 0
     LEARNING_RATE = 0.1
     N_ACTIONS = 6
-    input_dims = BombermanEnvironment().observation_shape
+    input_dims = (17, 17, 1)
 
 
     # Create save dir
@@ -22,8 +21,8 @@ if __name__ == '__main__':
 
     # Load data
     assert(backend.image_data_format()=='channels_last')
-    X = np.load('X.npy')
-    y = np.load('y.npy')
+    X = np.load('observations.npy')
+    y = np.load('qs.npy')
     #X=np.random.random((10000, *input_dims))
     #y=np.random.random((10000, N_ACTIONS))
 

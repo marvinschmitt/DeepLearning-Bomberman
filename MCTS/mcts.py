@@ -84,7 +84,7 @@ class MCTS:
         while not node.is_terminal():
             node = node.find_child_for_rollout()
             if node.get_actor() == 0 and collect_state:
-                if random.random() < np.exp(-node.world.step):
+                if random.random() < 1 - node.world.step / 400:
                     collected_state = deepcopy(node.world)
 
         return node.get_reward(), collected_state
