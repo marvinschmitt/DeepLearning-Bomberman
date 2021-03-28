@@ -11,7 +11,7 @@ def main(
         name=f'Koetherminator-{int(time.time())}',
         batch_size=128,
         initial_epoch=0,
-        lr=0.1,
+        lr=1,
         n_actions=6,
         input_dims=(17, 17, 1),
         n_epochs=120,
@@ -26,6 +26,8 @@ def main(
     assert(backend.image_data_format()=='channels_last')
     X = X if X is not None else np.load('deep_bomber/observations.npy')
     y = y if y is not None else np.load('deep_bomber/qs.npy')
+    if np.any(y == float('-inf')):
+        y = np.where(y == float('-inf'), 0, y)
     # X=np.random.random((10000, *input_dims))
     # y=np.random.random((10000, N_ACTIONS))
 
