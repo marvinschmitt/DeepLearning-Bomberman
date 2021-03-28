@@ -10,7 +10,8 @@ from MCTS.bomberman_node import BombermanNode
 from agents_fast import Agent
 from environment_fast import BombeRLeWorld, ACTION_TO_ID
 
-def main(args):
+
+def main(args, return_data=False, print_state_step=False):
     start_generation = time.perf_counter_ns()
 
     state_queue = []
@@ -43,6 +44,8 @@ def main(args):
             root = BombermanNode(initial_state, np.zeros(s.MAX_AGENTS), initial_order, "")
 
             observation.append(initial_state.get_observation())
+            if print_state_step:
+                print(initial_state.step)
 
             if len(state_queue) >= args.state_queue_length:
                 collect_states = False
@@ -67,6 +70,9 @@ def main(args):
 
             number_of_samples += 1
             t.update()
+
+    if return_data:
+        return np.array(observation), np.array(value), np.array(q)
 
     np.save("observation", np.array(observation))
     np.save("value", np.array(value))
