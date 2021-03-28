@@ -9,8 +9,9 @@ from collections import defaultdict
 
 def setup(self):
     self.time_to_think = 10000e6 # in ms
-    self.C = 100 # Exploration Hyperparameter
+    self.C = 40 # Exploration Hyperparameter
 
+def init(self):
     self.first_turn = True
 
     self.bomb_log = defaultdict(None)
@@ -30,6 +31,9 @@ def log_coins(self, game_state):
         self.coin_log[coin] = 1
 
 def act(self, game_state: dict):
+    if game_state["step"] == 1:
+        init(self)
+
     log_bombs(self, game_state)
     log_coins(self, game_state)
 

@@ -1,11 +1,11 @@
 """
-Adapted from
-Luke Harold Miles, July 2019, Public Domain Dedication
-https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
+This Module provides an implementation of the MCTS algorithm. To use it one has to implement the
+abstract Node class.
 """
 from __future__ import annotations
 import math
 import random
+from copy import deepcopy
 
 import numpy as np
 from abc import ABC, abstractmethod
@@ -44,13 +44,15 @@ class MCTS:
         print([self.Q[child]/self.N[child] for child in self.children[node]])
         return max(self.children[node], key=selection_policy)
 
-    def do_rollout(self, node):
-        "Make the tree one layer better. (Train for one iteration.)"
+    def do_rollout(self, node, collect_state=False):
+        "Perform a single rollout. Return one of the intermediary states if collect_state."
         path = self._select(node)
         leaf = path[-1]
         self._expand(leaf)
-        reward = self._simulate(leaf)
+        reward, state = self._simulate(leaf, collect_state=collect_state)
         self._backpropagate(path, reward)
+
+        return state
 
     def _select(self, node):
         "Find an unexplored descendent of `node`"
@@ -75,12 +77,17 @@ class MCTS:
             return  # already expanded
         self.children[node] = node.find_children()
 
-    def _simulate(self, node):
-        "Returns the reward for a random simulation (to completion) of `node`"
+    def _simulate(self, node, collect_state=False):
+        "Returns the reward for a random simulation (to completion) of `node`. Return intermediary state if collect_state."
+        collected_state = None
+
         while not node.is_terminal():
             node = node.find_child_for_rollout()
+            if node.get_actor() == 0 and collect_state:
+                if random.random() < np.exp(-node.world.step):
+                    collected_state = deepcopy(node.world)
 
-        return node.get_reward()
+        return node.get_reward(), collected_state
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"

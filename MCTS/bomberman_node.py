@@ -10,12 +10,10 @@ import numpy as np
 from collections import namedtuple
 
 from environment_fast import BombeRLeWorld
+from environment_fast import MOVES, BOMB, WAIT
 
-MOVES = ["LEFT", "RIGHT", "UP", "DOWN"]
-WAIT = "WAIT"
 WAIT_CHANCE = 1
-BOMB = "BOMB"
-BOMB_CHANCE = 0.9
+BOMB_CHANCE = 1
 
 
 class BombermanNode(Node):

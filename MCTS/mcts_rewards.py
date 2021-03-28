@@ -16,19 +16,21 @@ def reward_from_events(events: List[str]) -> float:
         e.BOMB_DROPPED: 0,
         e.COIN_FOUND: 0,
         e.SURVIVED_ROUND: 0,
-        e.CRATE_DESTROYED: 10,
+        e.CRATE_DESTROYED: 100,
         e.MOVED_LEFT: 0,
         e.MOVED_RIGHT: 0,
         e.MOVED_UP: 0,
         e.MOVED_DOWN: 0,
         e.INVALID_ACTION: 0.000,
         e.WAITED: 0.000,
-        e.GOT_KILLED: -500,
-        e.KILLED_SELF: -500
+        e.GOT_KILLED: -100,
+        e.KILLED_SELF: 0
     }
 
     reward_sum = 0
     for event in events:
         if event in game_rewards:
+            if event == e.GOT_KILLED:
+                return game_rewards[e.GOT_KILLED]
             reward_sum += game_rewards[event]
     return reward_sum

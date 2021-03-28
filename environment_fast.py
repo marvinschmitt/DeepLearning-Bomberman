@@ -10,6 +10,7 @@ from time import time
 from typing import List, Union
 
 import numpy as np
+import tensorflow as tf
 
 import events as e
 import settings as s
@@ -17,6 +18,18 @@ from agents_fast import Agent
 from fallbacks import pygame
 from items_fast import Coin, Explosion, Bomb
 
+MOVES = ["LEFT", "RIGHT", "UP", "DOWN"]
+WAIT = "WAIT"
+BOMB = "BOMB"
+
+ACTION_TO_ID = {
+    "LEFT": 0,
+    "RIGHT": 1,
+    "UP": 2,
+    "DOWN":  3,
+    "WAIT": 4,
+    "BOMB": 5
+}
 
 class GenericWorld:
     def __init__(self):
@@ -351,3 +364,32 @@ class BombeRLeWorld(GenericWorld):
     def end(self):
         if self.running:
             self.end_round()
+
+    def get_observation(self):
+        rows, cols = self.arena.shape
+        observation = np.zeros([rows, cols, 1], dtype=np.float32)
+
+        # write field with crates
+        observation[:, :, 0] = self.arena.copy()
+
+        # write revealed coins
+        if self.coins:
+            xy = np.array([[c.x, c.y] for c in self.coins]).T
+            observation[xy[0], xy[1], 0] = 2  # revealed coins
+
+        # write ticking bombs
+        if self.bombs:
+            xy = np.array([[b.x, b.y] for b in self.bombs]).T
+            t = np.array([b.timer for b in self.bombs])
+            observation[xy[0], xy[1], 0] = -10 * t
+
+        # write agents
+        if self.agents:
+            if self.agents[0]:
+                observation[self.agents[0].x, self.agents[0].y, 0] = 3
+
+            if self.agents[1:]:
+                xy = np.array([[a.x, a.y] for a in self.agents[1:]]).T
+                observation[xy[0], xy[1], 0] = -3
+
+        return observation
