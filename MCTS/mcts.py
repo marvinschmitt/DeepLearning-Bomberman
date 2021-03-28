@@ -61,6 +61,8 @@ class MCTS:
             if node not in self.children or not self.children[node]:
                 # node is either unexplored or terminal
                 return path
+
+            assert isinstance(self.children[node], set)
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
                 n = random.choice(list(unexplored))

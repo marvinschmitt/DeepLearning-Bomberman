@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 from MCTS.mcts import Node
-from typing import Tuple, List
+from typing import Tuple, List, Set
 from copy import deepcopy
 
 import queue
@@ -16,6 +16,7 @@ WAIT = "WAIT"
 WAIT_CHANCE = 0.05
 BOMB = "BOMB"
 BOMB_CHANCE = 0.9
+
 
 class BombermanNode(Node):
     """
@@ -54,7 +55,7 @@ class BombermanNode(Node):
         "Return what action was taken to get to this state."
         return self.reward
 
-    def find_children(self) -> List[Node]:
+    def find_children(self) -> Set[Node]:
         "All possible successors of this board state."
         if self.is_terminal():
             return set()
