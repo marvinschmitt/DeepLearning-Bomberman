@@ -54,8 +54,8 @@ class BombermanGame:
         if replay:
             args.save_replay = True
 
-        # agents = [("user_agent", True)] + [("rule_based_agent", False)] * (s.MAX_AGENTS-1)
-        agents = [("user_agent", True)] + [("peaceful_agent", False)] * (s.MAX_AGENTS - 1)
+        agents = [("user_agent", True)] + [("rule_based_agent", False)] * (s.MAX_AGENTS-1)
+        # agents = [("user_agent", True)] + [("peaceful_agent", False)] * (s.MAX_AGENTS - 1)
 
         if not args.no_gui:
             pygame.init()
