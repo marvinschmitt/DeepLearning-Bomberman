@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from collections import namedtuple

@@ -31,7 +31,7 @@ def plot_peaceful_double_axis():
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     plt.savefig("plots/peaceful_9x9_avg_score.png")
-    plt.show()
+    #plt.show()
 
 
 def plot_results(filepath, title, savefname):
@@ -47,7 +47,7 @@ def plot_results(filepath, title, savefname):
     ax1.set_ylabel("Loss")
 
     ax2.plot(rewards)
-    ax2.plot(np.convolve(rewards, np.ones(100)/100), color="green")
+    ax2.plot(np.convolve(rewards, np.ones(5000)/5000, mode='valid'), color="green")
     ax2.set_title("Average reward (past 100 ep)")
     ax2.set_xlabel("Episode")
     ax2.set_ylabel("Average reward")
@@ -56,10 +56,10 @@ def plot_results(filepath, title, savefname):
 
 
 if __name__ == '__main__':
-    plot_results("results_checkpoints/checkpoints/checkpoint_50k/all_metrics.pickle",
+    plot_results("results_checkpoints/checkpoints/checkpoint_400k/all_metrics.pickle",
                  "DQN Agent", "plots/dqn_results.png")
-    plot_results("results_checkpoints/checkpoints/checkpoint_ppo/all_metrics.pickle",
-                 "PPO Agent", "plots/ppo_results.png")
+#    plot_results("results_checkpoints/checkpoints/checkpoint_ppo/all_metrics.pickle",
+#                 "PPO Agent", "plots/ppo_results.png")
     plot_results("results_checkpoints/checkpoints/checkpoint_imitator/all_metrics.pickle",
-                 "Imitator Task", "plots/imitator_results.png")
+                 "Imitator Task with DQN Agent", "plots/imitator_results.png")
     plot_peaceful_double_axis()
