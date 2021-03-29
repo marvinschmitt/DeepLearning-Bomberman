@@ -21,7 +21,7 @@ class ChickenPredictor:
     def predict(self, game_state):
         feat = chicken.state_to_features(game_state)
         Qs = self.Q[tuple(feat)]
-        return np.mean(Qs)
+        return np.max(Qs)
 
 
 def setup(self):
@@ -72,7 +72,4 @@ def act(self, game_state: dict):
 
     action = mcts.choose(root).get_action()
 
-    print(f"CHOSEN ACTION: {action}")
-    if game_state["step"]==10:
-        breakpoint()
     return action
