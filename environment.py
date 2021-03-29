@@ -351,11 +351,14 @@ class BombeRLeWorld(GenericWorld):
                     if coin_pattern[i, j] == 1:
                         self.coins.append(Coin((x + i, x + j), self.arena[x+i,x+j] == 0))
                         coins[x + i, x + j] += 1"""
-        for i in range(3):
-            for j in range(3):
-                n_crates = (self.arena[1 + 5 * i:6 + 5 * i, 1 + 5 * j:6 + 5 * j] == 1).sum()
+
+        x_split = np.array_split(np.arange(s.ROWS), 3)
+        y_split = np.array_split(np.arange(s.COLS), 3)
+        for x_slice in x_split:
+            for y_slice in y_split:
+                n_crates = (self.arena[x_slice[:, np.newaxis], y_slice] == 1).sum()
                 while True:
-                    x, y = np.random.randint(1 + 5 * i, 6 + 5 * i), np.random.randint(1 + 5 * j, 6 + 5 * j)
+                    x, y = np.random.choice(x_slice), np.random.choice(y_slice)
                     if n_crates == 0 and self.arena[x, y] == 0:
                         self.coins.append(Coin((x, y)))
                         self.coins[-1].collectable = True
