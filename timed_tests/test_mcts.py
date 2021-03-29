@@ -61,7 +61,7 @@ class TestMCTS(unittest.TestCase):
         agents = [Agent(train=True), Agent(), Agent(), Agent()]
         initial_state = BombeRLeWorld(agents)
 
-        q_net = load_model("../pre_training/best-network.hdf5")
+        q_net = load_model("../results_checkpoints/pre_training/best-network.hdf5")
         observation = initial_state.get_observation()
         start = time.perf_counter_ns()
         q_net(observation[np.newaxis, :])
