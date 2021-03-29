@@ -43,7 +43,7 @@ class TestMCTS(unittest.TestCase):
             root = BombermanNode(initial_state, np.zeros(len(agents)), initial_order, "")
             n_iter = 0
             start = time.perf_counter_ns()
-            while time.perf_counter_ns() - start < (time_to_think*1e6):
+            while time.perf_counter_ns() - start < time_to_think:
                 mcts.do_rollout(root)
                 n_iter += 1
             return n_iter
@@ -65,18 +65,19 @@ class TestMCTS(unittest.TestCase):
 
             return n_iter
 
-        t = [i for i in range(100, 1000, 100)]+[i for i in range(1000, 5000, 1000)]
+        t = [i for i in range(100, 1000, 100)]+[i for i in range(1000, 10000, 500)]
         iterations = np.zeros(len(t))
         iterations_q = np.zeros(len(t))
         for i in range(len(t)):
-            #iterations[i] = count_mcts_iterations(t[i])
-            iterations_q[i] = count_mcts_iterations_q_net(t[i])
+            iterations[i] = count_mcts_iterations(t[i]*1e6)
+            iterations_q[i] = count_mcts_iterations_q_net(t[i]*1e6)
 
-        #plt.plot(t, iterations, color="blue")
-        plt.plot(t, iterations_q, color="green")
+        plt.plot(t, iterations, color="blue", label='MCTS')
+        plt.plot(t, iterations_q, color="green", label='MCTS+DQN')
         plt.title("MCTS rollouts by think time")
         plt.xlabel("Think time [ms]")
         plt.ylabel("Number of rollouts")
+        plt.legend(loc="upper left")
         plt.savefig("mcts_rollouts_by_t.png")
         # add line at 500ms if executed on RYZEN
         # add number of rollouts in DQN and value
