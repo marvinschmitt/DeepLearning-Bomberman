@@ -27,8 +27,7 @@ class BombermanGame:
         self._live_preview = False
 
         args = namedtuple("args",
-                          ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay",
-                           "make_video",
+                          ["no_gui", "fps", "log_dir", "turn_based", "update_interval", "save_replay", "replay", "make_video",
                            "continue_without_training"])
         args.continue_without_training = False
         args.save_replay = False
@@ -89,7 +88,7 @@ class BombermanGame:
 
         """
         self._world.do_step(agent_action)
-
+        
         events = self._agent.events
 
         reward = self.reward(events)
@@ -122,7 +121,7 @@ class BombermanGame:
             e.KILLED_OPPONENT: 5,
             # positive auxiliary rewards
             e.BOMB_DROPPED: 0.001,
-            # e.COIN_FOUND: 0.01,
+            #e.COIN_FOUND: 0.01,
             # e.SURVIVED_ROUND: 0.5,
             e.CRATE_DESTROYED: 0.1,
             e.MOVED_LEFT: 0.001,
@@ -180,7 +179,7 @@ class BombermanGame:
         """
 
         # write agents
-        if state['self']:  # let's hope there is...
+        if state['self']:   # let's hope there is...
             _, _, _, (self_x, self_y) = state['self']
             observation[self_y, self_x, 0] = 3
 
@@ -329,13 +328,11 @@ class BombermanEnvironment(py_environment.PyEnvironment):
         if mode == 'base':
             self._game = BombermanGame(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
-                                                                 dtype=np.float32, minimum=-3, maximum=3,
-                                                                 name='observation')
+                                                             dtype=np.float32, minimum=-3, maximum=3, name='observation')
         elif mode == 'imitator':
             self._game = BombermanGameImitator(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 1),
-                                                                 dtype=np.float32, minimum=-3, maximum=3,
-                                                                 name='observation')
+                                                             dtype=np.float32, minimum=-3, maximum=3, name='observation')
         elif mode == 'fourchannel':
             self._game = BombermanGameFourChannel(make_video=make_video, replay=replay, live_preview=live_preview)
             self._observation_spec = array_spec.BoundedArraySpec(shape=(self._game.ROWS, self._game.COLS, 4),
