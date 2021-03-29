@@ -5,8 +5,8 @@ import numpy as np
 
 import events as e
 import settings as s
-from agents_fast import Agent
-from items_fast import Coin, Explosion, Bomb
+from .agents_fast import Agent
+from .items_fast import Coin, Explosion, Bomb
 
 MOVES = ["LEFT", "RIGHT", "UP", "DOWN"]
 WAIT = "WAIT"
@@ -266,6 +266,8 @@ class BombeRLeWorld(GenericWorld):
                     agent = possiblle_agent
 
             self.bombs.append(Bomb(bomb[0], agent, bomb[1], s.BOMB_POWER))
+            
+
 
     def distribute_coins(self, state, coin_log):
         self.coins = [Coin(coin, True) for coin in state["coins"]]
@@ -383,3 +385,4 @@ class BombeRLeWorld(GenericWorld):
                 observation[xy[0], xy[1], 0] = -3
 
         return observation
+
