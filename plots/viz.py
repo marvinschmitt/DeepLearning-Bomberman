@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_peaceful_double_axis():
-    with open("results_checkpoints/results_35k/metrics.pt", 'rb') as f:
+    with open("../results_checkpoints/results_35k/metrics.pt", 'rb') as f:
         r = pickle.load(f)
     scores = r["scores"]
     epsilons = r["epsilons"]
@@ -56,10 +56,10 @@ def plot_results(filepath, title, savefname):
 
 
 if __name__ == '__main__':
-    plot_results("results_checkpoints/checkpoints/checkpoint_400k/all_metrics.pickle",
+    plot_results("../results_checkpoints/checkpoints/checkpoint_400k/all_metrics.pickle",
                  "DQN Agent", "plots/dqn_results.png")
 #    plot_results("results_checkpoints/checkpoints/checkpoint_ppo/all_metrics.pickle",
 #                 "PPO Agent", "plots/ppo_results.png")
-    plot_results("results_checkpoints/checkpoints/checkpoint_imitator/all_metrics.pickle",
+    plot_results("../results_checkpoints/checkpoints/checkpoint_imitator/all_metrics.pickle",
                  "Imitator Task with DQN Agent", "plots/imitator_results.png")
     plot_peaceful_double_axis()
