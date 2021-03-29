@@ -41,7 +41,6 @@ class MCTS:
 
         selection_policy = self.final_selection_policy or score
 
-        print([self.Q[child]/self.N[child] for child in self.children[node]])
         return max(self.children[node], key=selection_policy)
 
     def do_rollout(self, node, collect_state=False):

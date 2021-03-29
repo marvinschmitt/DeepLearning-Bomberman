@@ -5,8 +5,8 @@ import numpy as np
 
 import events as e
 import settings as s
-from agents_fast import Agent
-from items_fast import Coin, Explosion, Bomb
+from .agents_fast import Agent
+from .items_fast import Coin, Explosion, Bomb
 
 MOVES = ["LEFT", "RIGHT", "UP", "DOWN"]
 WAIT = "WAIT"
